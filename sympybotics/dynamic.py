@@ -117,9 +117,6 @@ def gen_tau_rne( gen_intervars, rbt ):
 
 def gen_regressor_rne( gen_intervars, rbt, usefricdyn = True ):
 
-  if usefricdyn:
-    fric = gen_fricterm(rbt)
-
   ivars = []
   m_intervar_func = intermediate.genfunc_m_intervar( gen_intervars, ivars )
 
@@ -128,22 +125,30 @@ def gen_regressor_rne( gen_intervars, rbt, usefricdyn = True ):
   dynparms = rbt.dynparms( usefricdyn = usefricdyn )
 
   Y = sympy.zeros( ( rbt.dof, len(dynparms) ) )
-
-  cancel_dict = dict( zip( dynparms, [0]*len(dynparms) ) )
+  
+  if usefricdyn:
+    fric = gen_fricterm(rbt)
+    fric_dict = dict( zip( rbt.fc, [0]*len(rbt.fc) ) )
+    fric_dict.update( dict( zip( rbt.fv, [0]*len(rbt.fv) ) ) )
 
   for p,parm in enumerate(dynparms):
 
-    select = copy.copy(cancel_dict)
-    select.update( { parm: 1 } )
+    #print(parm)
 
     LLi = list(range(0,rbt.dof+1))
 
     for i in range( rbt.dof ):
-      LLi[i+1] = ( ( rbt.L[i].row_join(skew(rbt.r[i])) ).col_join( (-skew( rbt.r[i]) ).row_join(sympy.eye(3)*rbt.m[i]) ) ).subs(select)
+      L = rbt.L[i].applyfunc(lambda x: 1 if x == parm else 0 )
+      r = rbt.r[i].applyfunc(lambda x: 1 if x == parm else 0 )
+      m = 1 if rbt.m[i] == parm else 0
+      
+      LLi[i+1] = ( ( L.row_join(skew(r)) ).col_join( (-skew(r) ).row_join(sympy.eye(3)*m) ) )
 
     Y[:,p] = _backward_rne( rbt, LLi, Vi, dVi, m_intervar_func )
 
     if usefricdyn:
+      select = copy.copy(fric_dict)
+      select.update( { parm: 1 } )
       Y[:,p] += fric.subs(select)
 
   if gen_intervars:

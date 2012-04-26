@@ -144,17 +144,17 @@ class Robot(object):
     
     
     
-  def set_DH_parms( self, DH_parms_list ):
+  def set_dh_parms( self, dh_parms_list ):
     
-    if len( DH_parms_list ) != self.dof:
-      raise Exception('Robot.set_geometry(): provided number of links differ from robot dof (%d vs %d).' % ( len( DH_parms_list ), self.dof) )
+    if len( dh_parms_list ) != self.dof:
+      raise Exception('Robot.set_geometry(): provided number of links differ from robot dof (%d vs %d).' % ( len( dh_parms_list ), self.dof) )
       
     self.dh_parms = []
     
     for i in range( self.dof ):
-      if len( DH_parms_list[i] ) != 4:
+      if len( dh_parms_list[i] ) != 4:
         raise Exception('Robot.set_geometry(): wrong number of Denavit-Hartenberg parameters (must be 4 per link).' )
-      self.dh_parms.append( DH_parms_list[i] )
+      self.dh_parms.append( dh_parms_list[i] )
       
       
 

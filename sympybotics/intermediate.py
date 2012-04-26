@@ -53,7 +53,7 @@ def genfunc_m_intervar( gen_intervars, ivars ):
     else:
       poolrepr = 'ivar_'
     def m_intervar_func( matrix, varrepr='' ):
-      matrix = matrix.applyfunc(lambda x: x.trigsimp())
+      #matrix = matrix.applyfunc(lambda x: x.trigsimp())
       return m_intervar( matrix, ivars, poolrepr=poolrepr, condition_func = is_compound )
   else:
     def m_intervar_func( matrix, varrepr='' ):
