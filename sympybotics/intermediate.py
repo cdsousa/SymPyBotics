@@ -21,7 +21,9 @@ def is_compound(expression):
   else :
     return True
 
-def intervar( expression, varpool, varrepr = '', poolrepr = '', condition_func=None ):
+def intervar( expression, varpool, varrepr = '', poolrepr = '', condition_func=None, simplify_func=None ):
+    if simplify_func:
+      expression = simplify_func( expression )
     if condition_func and not condition_func(expression):
         return expression
     else:
@@ -36,12 +38,12 @@ def intervar( expression, varpool, varrepr = '', poolrepr = '', condition_func=N
         return newvar
     
     
-def m_intervar( m_exp, varpool, varrepr = '', poolrepr = '', condition_func = None ):
+def m_intervar( m_exp, varpool, varrepr = '', poolrepr = '', condition_func = None, simplify_func = None ):
     m_exp_out = copy.copy(m_exp)
     repridx = None
     for e in [(i,j) for i in range(m_exp.rows) for j in range(m_exp.cols)] :
         if varrepr : repridx = varrepr+'_'+str(e[0])+'_'+str(e[1])
-        m_exp_out[e] = intervar( m_exp[e] , varpool, repridx, poolrepr, condition_func )
+        m_exp_out[e] = intervar( m_exp[e] , varpool, repridx, poolrepr, condition_func, simplify_func )
     return m_exp_out
 
 
@@ -53,8 +55,9 @@ def genfunc_m_intervar( gen_intervars, ivars ):
     else:
       poolrepr = 'ivar_'
     def m_intervar_func( matrix, varrepr='' ):
-      #matrix = matrix.applyfunc(lambda x: x.trigsimp())
-      return m_intervar( matrix, ivars, poolrepr=poolrepr, condition_func = is_compound )
+      simplify_func = None
+      #simplify_func = sympy.trigsimp
+      return m_intervar( matrix, ivars, poolrepr=poolrepr, condition_func = is_compound, simplify_func = simplify_func )
   else:
     def m_intervar_func( matrix, varrepr='' ):
       return matrix

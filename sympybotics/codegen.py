@@ -13,6 +13,8 @@
 
 
 import copy
+import random
+import string
 import sympy
 
 
@@ -28,8 +30,11 @@ def code_apply_func( code, func ):
 def code_subs( code, subs_dict ):
   return code_apply_func( code, lambda x: x.subs( subs_dict ) )
 
-def code_cse( code, auxvarname = 'ccse' ):
-    
+def code_cse( code, auxvarname = None ):
+
+    if not auxvarname:
+      auxvarname = 'cse_' + ''.join([random.choice(string.ascii_lowercase+string.digits) for _ in range(4)]) + '_ivar_'
+      
     code_in = code
 
     codecse = sympy.cse( sympy.sympify( [i[1] for i in code_in[0]] + code_in[1] ), \
@@ -132,38 +137,50 @@ def code_remove_not_or_once_used( code ):
     return retcode
 
 
-def code_rename_ivars(code, ivarnames='ivar_' ):
+def code_rename_ivars_unsafe(code, ivarnames ):
     
-    retcode = copy.deepcopy(code)
-    
-    for i in range(len(retcode[0])):
-        
-        Dsubs = { retcode[0][i][0] : sympy.Symbol(ivarnames+str(i),real=True) }
-        
-        retcode[0][i] = ( retcode[0][i][0].subs( Dsubs ) , retcode[0][i][1] )
-        
-        for j in range(i+1,len(retcode[0])):
-            retcode[0][j] = ( retcode[0][j][0], retcode[0][j][1].subs( Dsubs ) )
-        
-        for j in range(len(retcode[1])):
-            retcode[1][j] = sympy.sympify(retcode[1][j]).subs( Dsubs )
-    
-    return retcode
-
-
-def optimize_code( code, ivarnames='ivar_' ) :
   retcode = copy.deepcopy(code)
-  if sympy.__version__ > '0.7.1':
-    retcode = code_apply_func( retcode, lambda x: sympy.signsimp(x) )
+   
+  for i in range(len(retcode[0])):
+
+    new_symbol = sympy.Symbol(ivarnames+str(i),real=True)
+    Dsubs = { retcode[0][i][0] : new_symbol }
+  
+    retcode[0][i] = ( new_symbol , retcode[0][i][1] )
+        
+    for j in range(i+1,len(retcode[0])):
+      retcode[0][j] = ( retcode[0][j][0], retcode[0][j][1].subs( Dsubs ) )
+  
+    for j in range(len(retcode[1])):
+      retcode[1][j] = sympy.sympify(retcode[1][j]).subs( Dsubs )
+  
+  return retcode
+
+
+def optimize_code( code, ivarnames='iv_', debug = True ) :
+  if debug: print('Optimizing code')
+  retcode = copy.deepcopy(code)
+  if debug: print('code_apply_func trigsimp')
+  retcode = code_apply_func( retcode, lambda x: sympy.trigsimp(x) )
+  if debug: print('code_remove_not_compound')
   retcode = code_remove_not_compound(retcode)
+  if debug: print('code_remove_not_or_once_used')
   retcode = code_remove_not_or_once_used(retcode)
+  if debug: print('code_cse')
   retcode = code_cse(retcode,'cse')
+  #if debug: print('code_remove_not_compound')
+  #retcode = code_remove_not_compound(retcode)
+  #if debug: print('code_remove_not_or_once_used')
+  #retcode = code_remove_not_or_once_used(retcode)
+  #if debug: print('code_cse 2')
+  #retcode = code_cse(retcode,'cse2')
+  if debug: print('code_remove_not_compound')
   retcode = code_remove_not_compound(retcode)
+  if debug: print('code_remove_not_or_once_used')
   retcode = code_remove_not_or_once_used(retcode)
-  retcode = code_cse(retcode,'cse2')
-  retcode = code_remove_not_compound(retcode)
-  retcode = code_remove_not_or_once_used(retcode)
-  retcode = code_rename_ivars(retcode, ivarnames=ivarnames)
+  if debug: print('code_rename_ivars')
+  retcode = code_rename_ivars_unsafe(retcode, ivarnames=ivarnames)
+  if debug: print('Done.')
   return retcode
 
 
@@ -266,6 +283,6 @@ def sympymatrix_to_func( lang, ivars, matrix, func_name, func_parms, subs_pairs 
     if lang in ['python','py'] : gen_func = gen_py_func
     elif lang in ['c','c++'] : gen_func = gen_c_func
     else: raise Exception('chosen language not supported.')
-    code = optimize_code( (ivars, matrix.mat) )
+    code = optimize_code( (ivars, matrix.mat), ivarnames='aux' )
     return gen_func( code, func_parms, subs_pairs, func_name, func_name+'_out' )
 
