@@ -157,7 +157,7 @@ def code_rename_ivars_unsafe(code, ivarnames ):
   return retcode
 
 
-def optimize_code( code, ivarnames='iv_', debug = True ) :
+def optimize_code( code, ivarnames='iv', debug = True ) :
   if debug: print('Optimizing code')
   retcode = copy.deepcopy(code)
   if debug: print('code_apply_func trigsimp')
