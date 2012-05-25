@@ -100,7 +100,7 @@ def gen_tau_rne( gen_intervars, rbt ):
   LLi = list(range(0,rbt.dof+1))
 
   for i in range( rbt.dof ):
-    LLi[i+1] = ( rbt.L[i].row_join(skew(rbt.r[i])) ).col_join( (-skew( rbt.r[i]) ).row_join(sympy.eye(3)*rbt.m[i]) )
+    LLi[i+1] = ( rbt.L[i].row_join(skew(rbt.l[i])) ).col_join( (-skew( rbt.l[i]) ).row_join(sympy.eye(3)*rbt.m[i]) )
 
   ivars = []
   m_intervar_func = intermediate.genfunc_m_intervar( gen_intervars, ivars )
@@ -139,7 +139,7 @@ def gen_regressor_rne( gen_intervars, rbt, usefricdyn = True ):
 
     for i in range( rbt.dof ):
       L = rbt.L[i].applyfunc(lambda x: 1 if x == parm else 0 )
-      r = rbt.r[i].applyfunc(lambda x: 1 if x == parm else 0 )
+      r = rbt.l[i].applyfunc(lambda x: 1 if x == parm else 0 )
       m = 1 if rbt.m[i] == parm else 0
       
       LLi[i+1] = ( ( L.row_join(skew(r)) ).col_join( (-skew(r) ).row_join(sympy.eye(3)*m) ) )
@@ -180,7 +180,7 @@ def gen_massmatrix_rne( gen_intervars, rbt ):
   LLi = list(range(0,rbt.dof+1))
 
   for i in range( rbt.dof ):
-    LLi[i+1] = ( rbt.L[i].row_join(skew(rbt.r[i])) ).col_join( (-skew( rbt.r[i]) ).row_join(sympy.eye(3)*rbt.m[i]) )
+    LLi[i+1] = ( rbt.L[i].row_join(skew(rbt.l[i])) ).col_join( (-skew( rbt.l[i]) ).row_join(sympy.eye(3)*rbt.m[i]) )
 
   ivars = []
   m_intervar_func = intermediate.genfunc_m_intervar( gen_intervars, ivars )

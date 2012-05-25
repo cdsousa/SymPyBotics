@@ -76,10 +76,10 @@ class Robot(object):
     
     m = self.m = list( range( self.dof ) )
 
-    l = self.l = list( range( self.dof ) )
-    
-    ml = self.ml = list( range( self.dof ) )
     r = self.r = list( range( self.dof ) )
+    
+    mr = self.ml = list( range( self.dof ) )
+    l = self.l = list( range( self.dof ) )
     
     Is = self.Is = list( range( self.dof ) )
     Ls = self.Ls = list( range( self.dof ) )
@@ -95,8 +95,8 @@ class Robot(object):
     
     dict_I2Lexp = self.dict_I2Lexp = subs_dict()
     dict_L2Iexp = self.dict_L2Iexp = subs_dict()
-    dict_r2ml = self.dict_r2ml = subs_dict()
-    dict_l2rm = self.dict_l2rm = subs_dict()
+    dict_l2mr = self.dict_l2mr = subs_dict()
+    dict_r2lm = self.dict_r2lm = subs_dict()
 
 
     
@@ -104,10 +104,10 @@ class Robot(object):
       
       m[i] = new_sym('m_'+str(i+1))
       
-      l[i] = sympy.Matrix( [ new_sym( 'l_'+str(i+1)+dim ) for dim in ['x','y','z'] ] )
-      
-      ml[i] = m[i] * l[i]
       r[i] = sympy.Matrix( [ new_sym( 'r_'+str(i+1)+dim ) for dim in ['x','y','z'] ] )
+      
+      mr[i] = m[i] * r[i]
+      l[i] = sympy.Matrix( [ new_sym( 'l_'+str(i+1)+dim ) for dim in ['x','y','z'] ] )
       
       Is[i] = [ new_sym( 'I_'+str(i+1)+elem ) for elem in ['xx','xy','xz', 'yy', 'yz', 'zz'] ]
       Ls[i] = [ new_sym( 'L_'+str(i+1)+elem ) for elem in ['xx','xy','xz', 'yy', 'yz', 'zz'] ]
@@ -124,8 +124,8 @@ class Robot(object):
       fc[i] = new_sym( 'fc_'+str(i+1))
 
       
-      I_funcof_L[i] = L[i] + m[i] * sym_skew(l[i]).T * sym_skew(l[i])
-      L_funcof_I[i] = I[i] - m[i] * sym_skew(l[i]).T * sym_skew(l[i])
+      I_funcof_L[i] = L[i] + m[i] * sym_skew(r[i]).T * sym_skew(l[i])
+      L_funcof_I[i] = I[i] - m[i] * sym_skew(r[i]).T * sym_skew(l[i])
 
       for elem,exprss in enumerate(I_funcof_L[i]):
         dict_I2Lexp[ I[i][elem] ] = exprss
@@ -134,8 +134,8 @@ class Robot(object):
         dict_L2Iexp[ L[i][elem] ] = exprss
 
       for elem in range(3):
-        dict_r2ml[ r[i][elem] ] = ml[i][elem]
-        dict_l2rm[ l[i][elem] ] = r[i][elem] / m[i]
+        dict_l2mr[ l[i][elem] ] = mr[i][elem]
+        dict_r2lm[ r[i][elem] ] = l[i][elem] / m[i]
 
       self.latex_symbols = {}
       for i in range(self.dof):
@@ -168,14 +168,14 @@ class Robot(object):
     parms = []
     for i in range( 0, self.dof ):
 
-      if parm_order == 'khalil' or parm_order == 'tensor first': # Ixx Ixy Ixz Iyy Iyz Izz mlx mly mlz m
+      if parm_order == 'khalil' or parm_order == 'tensor first': # Lxx Lxy Lxz Lyy Lyz Lzz lx ly lz m
         parms += self.Ls[i]
-        parms += self.r[i].mat
+        parms += self.l[i].mat
         parms += [ self.m[i] ]
 
-      elif parm_order == 'siciliano' or parm_order == 'mass first': # m mlx mly mlz Ixx Ixy Ixz Iyy Iyz Izz
+      elif parm_order == 'siciliano' or parm_order == 'mass first': # m lx ly lz Lxx Lxy Lxz Lyy Lyz Lzz
         parms += [ self.m[i] ]
-        parms += self.r[i].mat
+        parms += self.l[i].mat
         parms += self.Ls[i]
 
       else:
