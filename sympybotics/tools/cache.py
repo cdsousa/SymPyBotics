@@ -37,7 +37,7 @@ def memoized( func, extra_deps='', cache_folder=None, hash_args_by_str=False, de
     if debug:
       print('all      ',sha1)
 
-    filename = func.__name__ + '-' + sha1
+    filename = func.__name__ + '-' + sha1 + '.pkl'
 
     pathfile = os.path.join( cache_folder, filename )
 
@@ -46,7 +46,7 @@ def memoized( func, extra_deps='', cache_folder=None, hash_args_by_str=False, de
         cached_return = pickle.load( file )
 
     except:
-      print('(memoization cache miss)')
+      print('(memoization cache miss ...)')
 
       if cache_folder and not os.path.exists( cache_folder ):
         os.makedirs( cache_folder )
@@ -55,7 +55,7 @@ def memoized( func, extra_deps='', cache_folder=None, hash_args_by_str=False, de
 
       call_return = func( *args, **kwargs )
 
-      print( '(memoization call wall time: %.3f)' % (time.time()-t0) )
+      print( '(... memoization call wall time: %.3f)' % (time.time()-t0) )
 
       if debug:
         print('call     ',hashlib.sha1(str(call_return).encode()).hexdigest())

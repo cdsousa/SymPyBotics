@@ -56,7 +56,9 @@ class Robot(object):
   def _gen_symbols( self ) :
     
     subs_dict = collections.OrderedDict
-    new_sym = sympy.Symbol
+    
+    def new_sym( name ):
+      return sympy.Symbol(name, real=True)
 
     def sym_skew(v):
       return sympy.Matrix( [ [     0, -v[2],  v[1] ],
@@ -65,12 +67,12 @@ class Robot(object):
 
     dof = self.dof
     
-    #q = self.q = [ new_sym('q_'+str(i+1),real=True) for i in range(self.dof) ]
-    #dq = self.dq = [ new_sym('dq_'+str(i+1),real=True) for i in range(self.dof) ]
-    #ddq = self.ddq = [ new_sym('ddq_'+str(i+1),real=True) for i in range(self.dof) ]
-    q = self.q = sympy.Matrix( [ [new_sym('q'+str(i+1),real=True)] for i in range(self.dof) ] )
-    dq = self.dq = sympy.Matrix( [ [new_sym('dq'+str(i+1),real=True)] for i in range(self.dof) ] )
-    ddq = self.ddq = sympy.Matrix( [ [new_sym('ddq'+str(i+1),real=True)] for i in range(self.dof) ] )
+    #q = self.q = [ new_sym('q_'+str(i+1)) for i in range(self.dof) ]
+    #dq = self.dq = [ new_sym('dq_'+str(i+1)) for i in range(self.dof) ]
+    #ddq = self.ddq = [ new_sym('ddq_'+str(i+1)) for i in range(self.dof) ]
+    q = self.q = sympy.Matrix( [ [new_sym('q'+str(i+1))] for i in range(self.dof) ] )
+    dq = self.dq = sympy.Matrix( [ [new_sym('dq'+str(i+1))] for i in range(self.dof) ] )
+    ddq = self.ddq = sympy.Matrix( [ [new_sym('ddq'+str(i+1))] for i in range(self.dof) ] )
     
     m = self.m = list( range( self.dof ) )
 
@@ -100,15 +102,15 @@ class Robot(object):
     
     for i in range( dof ):
       
-      m[i] = new_sym('m_'+str(i+1),real=True)
+      m[i] = new_sym('m_'+str(i+1))
       
-      l[i] = sympy.Matrix( [ new_sym( 'l_'+str(i+1)+dim, real=True ) for dim in ['x','y','z'] ] )
+      l[i] = sympy.Matrix( [ new_sym( 'l_'+str(i+1)+dim ) for dim in ['x','y','z'] ] )
       
       ml[i] = m[i] * l[i]
-      r[i] = sympy.Matrix( [ new_sym( 'r_'+str(i+1)+dim, real=True ) for dim in ['x','y','z'] ] )
+      r[i] = sympy.Matrix( [ new_sym( 'r_'+str(i+1)+dim ) for dim in ['x','y','z'] ] )
       
-      Is[i] = [ new_sym( 'I_'+str(i+1)+elem, real=True ) for elem in ['xx','xy','xz', 'yy', 'yz', 'zz'] ]
-      Ls[i] = [ new_sym( 'L_'+str(i+1)+elem, real=True ) for elem in ['xx','xy','xz', 'yy', 'yz', 'zz'] ]
+      Is[i] = [ new_sym( 'I_'+str(i+1)+elem ) for elem in ['xx','xy','xz', 'yy', 'yz', 'zz'] ]
+      Ls[i] = [ new_sym( 'L_'+str(i+1)+elem ) for elem in ['xx','xy','xz', 'yy', 'yz', 'zz'] ]
 
       I[i] = sympy.Matrix( [ [ Is[i][0], Is[i][1], Is[i][2] ],
                              [ Is[i][1], Is[i][3], Is[i][4] ],
@@ -118,8 +120,8 @@ class Robot(object):
                              [ Ls[i][1], Ls[i][3], Ls[i][4] ],
                              [ Ls[i][2], Ls[i][4], Ls[i][5] ] ] )
       
-      fv[i] = new_sym( 'fv_'+str(i+1), real=True)
-      fc[i] = new_sym( 'fc_'+str(i+1), real=True)
+      fv[i] = new_sym( 'fv_'+str(i+1))
+      fc[i] = new_sym( 'fc_'+str(i+1))
 
       
       I_funcof_L[i] = L[i] + m[i] * sym_skew(l[i]).T * sym_skew(l[i])
@@ -207,8 +209,10 @@ class Robot(object):
     return self
 
 
-
-
+  def Ji( self, link=None ):
+    if link == None : link = self.dof
+    return self.Jpi[link].col_join( self.Joi[link] )
+  
 
   def gen_kinematic_model( self ):
 
@@ -220,11 +224,6 @@ class Robot(object):
     self.Joi = self.kinem.Joi
     self.Jcpi = self.kinem.Jcpi
     self.Jcoi = self.kinem.Jcoi
-    
-    def Ji( link=None ):
-      return self.kinem.Ji( self, link )
-      
-    self.Ji = Ji
 
     return self
 

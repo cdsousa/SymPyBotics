@@ -16,12 +16,14 @@ import sympy
 from . import intermediate
 
 
+class Geom(object):
+  pass
+
+
 def gen_geometric_model( robot , gen_intervars = False ):
   
   print("Attention to indexes -- dof+1")
 
-  class Geom(object):
-    pass
 
   def inverse_T(T):
     return T[0:3,0:3].transpose().row_join( - T[0:3,0:3].transpose() * T[0:3,3] ).col_join( sympy.zeros((1,3)).row_join(sympy.eye(1)) )
@@ -148,14 +150,13 @@ def gen_geometric_model( robot , gen_intervars = False ):
 
 
 
+class Kinem(object):
+  pass
 
-
+  
 def gen_kinematic_model( robot , geom, gen_intervars = False ):
   
   print("Attention to indexes -- dof+1")
-  
-  class Kinem(object):
-    pass
   
   def sym_skew(v):
     return sympy.Matrix( [ [     0, -v[2],  v[1] ],
@@ -199,18 +200,7 @@ def gen_kinematic_model( robot , geom, gen_intervars = False ):
   kinem.Jcoi = kinem.Joi
   for l in range(1 ,robot.dof+1 ):
     kinem.Jcpi[l] = m_intervar_func( kinem.Jpi[l] - sym_skew( geom.Ri[l]*robot.l[l-1] ) * kinem.Joi[l] )
-    
-  #kinem.Ji = range(0 ,robot.dof+1 )
-  #kinem.Ji[0] = sympy.zeros((6,robot.dof))
-  #for l in range(1 ,robot.dof+1 ):
-     #kinem.Ji[l] = kinem.Jpi[l].stack(kinem.Joi[l])
-  
-  
-  def Ji( robot, link=None ):
-    if link == None : link = robot.dof
-    return robot.Jpi[link].col_join( robot.Joi[link] )
-  
-  kinem.Ji = Ji
+
 
   if gen_intervars:
     return ivars,kinem
