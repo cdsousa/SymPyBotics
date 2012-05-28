@@ -124,8 +124,8 @@ class Robot(object):
       fc[i] = new_sym( 'fc_'+str(i+1))
 
       
-      I_funcof_L[i] = L[i] + m[i] * sym_skew(r[i]).T * sym_skew(l[i])
-      L_funcof_I[i] = I[i] - m[i] * sym_skew(r[i]).T * sym_skew(l[i])
+      L_funcof_I[i] = I[i] + m[i] * sym_skew(r[i]).T * sym_skew(r[i])
+      I_funcof_L[i] = L[i] - m[i] * sym_skew(r[i]).T * sym_skew(r[i])
 
       for elem,exprss in enumerate(I_funcof_L[i]):
         dict_I2Lexp[ I[i][elem] ] = exprss
