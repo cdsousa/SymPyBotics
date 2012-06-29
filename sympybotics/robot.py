@@ -158,9 +158,10 @@ class Robot(object):
         raise Exception('Robot.set_geometry(): wrong number of Denavit-Hartenberg parameters (must be 4 per link).' )
       self.dh_parms.append( dh_parms_list[i] )
       
+    return self
       
 
-  def dynparms( self, parm_order = None, usefricdyn=True ):
+  def dynparms( self, parm_order = None, usefricdyn=False ):
 
     if not parm_order: parm_order = self.dyn_parms_order
     parm_order = parm_order.lower()
