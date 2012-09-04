@@ -10,6 +10,7 @@
 #                  http://www.gnu.org/licenses/
 ###############################################################################
 
+"""Symbolic manipulation of robot geometric, kinematic and dynamic models."""
 
 
 from .robot import Robot
