@@ -16,8 +16,14 @@ import sympy
 
 
 class Robot(object):
+  """Class that generates and holds robot geometric and kinematic information, and dynamic parameter symbols."""
   
   def __init__(self,dof,name,shortname=None):
+    """
+    Create Robot instance with data structures for robot geometry and symbols of robot dynamics.
+
+    After Robot instantiation, robot geometry must be defined through function set_dh_parms.
+    """
     
     self.dof = int(dof)
     self.name = str(name)
@@ -54,6 +60,7 @@ class Robot(object):
   
   
   def _gen_symbols( self ) :
+    """Generate robot dynamic symbols and populates Robot instance with them. (internal function)"""
     
     subs_dict = collections.OrderedDict
     
@@ -147,6 +154,11 @@ class Robot(object):
     
     
   def set_dh_parms( self, dh_parms_list ):
+    """
+    Define the Robot geometry using Denavit-Hartenberg notation.
+
+    Must be called after Robot instance creation.
+    """
     
     if len( dh_parms_list ) != self.dof:
       raise Exception('Robot.set_geometry(): provided number of links differ from robot dof (%d vs %d).' % ( len( dh_parms_list ), self.dof) )
@@ -162,6 +174,7 @@ class Robot(object):
       
 
   def dynparms( self, parm_order = None, usefricdyn=False ):
+    """Return list of Robot symbolic dynamic parameters."""
 
     if not parm_order: parm_order = self.dyn_parms_order
     parm_order = parm_order.lower()
@@ -192,6 +205,7 @@ class Robot(object):
   
   
   def gen_geometric_model(self):
+    """Generate and return an object with Robot symbolic geometric transformations."""
 
     from . import geomkinem
 
@@ -211,11 +225,14 @@ class Robot(object):
 
 
   def Ji( self, link=None ):
+    """Return symbolic Jacobian matrix relactive to specified link frame."""
+    
     if link == None : link = self.dof
     return self.Jpi[link].col_join( self.Joi[link] )
   
 
   def gen_kinematic_model( self ):
+    """Generate and return an object with Robot symbolic Jacobians."""
 
     from . import geomkinem
     
