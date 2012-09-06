@@ -211,53 +211,41 @@ def gen_massmatrix_rne( gen_intervars, rbt ):
 
 
 
+def find_dyn_parm_deps( dof, parm_num, regressor_func ):
 
-
-
-
-
-def linear_dependencies( m , err_dec = 20, round_dec = 10 ):
-
-    W = m
-    
-    (nr,nc) = W.shape
-
-    d = numpy.identity(nc)
-
-    if not W[:,0].any():
-        d[0,0] = 0.0
-
-    for i in range(1,nc):
-        if not W[:,i].any():
-            d[i,i] = 0.0
-        else:
-            A = W[:,:i]
-            b = W[:,i:i+1]
-            Api = numpy.linalg.pinv(A)
-            x = numpy.dot(Api,b)
-            err = numpy.linalg.norm(b - numpy.dot(A,x))
-            if err < 10.0**(-err_dec):
-                d[:,i:i+1] = numpy.vstack(( x.reshape(i,1),numpy.zeros((nc-i,1)) ))
-                W[:,i:i+1] = numpy.zeros((nr,1))
-
-    return d.round(round_dec)
-
-
-
-def find_parm_dependencies_numeric( dof, Pn, Y_func, Y_rows=None, samples=1000, err_dec = 5, round_dec = 6 ):
+  samples=10000
+  round = 10
 
   pi = numpy.pi
 
-  if not Y_rows: Y_rows = dof
+  Z = numpy.zeros( ( dof*samples, parm_num ) )
 
-  W = numpy.zeros( ( Y_rows*samples, Pn ) )
   for i in range(samples):
     q = [ float( numpy.random.random()*2.0*pi - pi ) for j in range(dof) ]
     dq = [ float( numpy.random.random()*2.0*pi - pi ) for j in range(dof) ]
     ddq = [ float( numpy.random.random()*2.0*pi - pi ) for j in range(dof) ]
-    W[ i*Y_rows : i*Y_rows+Y_rows , : ] = numpy.matrix( Y_func( q, dq, ddq ) ).reshape( Y_rows, Pn )
+    Z[ i*dof : i*dof+dof , : ] = numpy.matrix( regressor_func( q, dq, ddq ) ).reshape( dof, parm_num )
 
-  deps = linear_dependencies( W, err_dec, round_dec )
+  R1_diag=  numpy.linalg.qr( Z, mode='economic' ).diagonal().round(round)
+  dbi = []
+  ddi = []
+  for i,e in enumerate(R1_diag):
+      if e != 0:
+          dbi.append(i)
+      else:
+          ddi.append(i)
+  dbn = len(dbi)
+  
+  P = numpy.mat(numpy.eye(parm_num))[ :, dbi+ddi ]
+  Pb = P[:,:dbn]
+  Pd = P[:,dbn:]
+  
+  Rbd1 = numpy.linalg.qr( Z*P, mode='r' )
+  Rb1 = Rbd1[:dbn,:dbn]
+  Rd1 = Rbd1[:dbn,dbn:]
+  
+  Kd = ( numpy.linalg.inv(Rb1) * Rd1 ).round(round)
 
-  return deps
+  return Pb,Pd,Kd
+
 
