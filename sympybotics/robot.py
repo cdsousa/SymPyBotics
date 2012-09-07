@@ -14,15 +14,26 @@
 import collections
 import sympy
 
+def _new_sym( name ):
+  return sympy.Symbol(name, real=True)
+  
+def q_num(i):
+    return _new_sym('q'+str(i))
+  
+_generic_joint_symb = _new_sym('q')
+  
+q = _generic_joint_symb
+
 
 class Robot(object):
   """Class that generates and holds robot geometric and kinematic information, and dynamic parameter symbols."""
+
   
-  def __init__(self,dof,name,shortname=None):
+  def __init__(self,dof,name,shortname=None,dh_parms=None):
     """
     Create Robot instance with data structures for robot geometry and symbols of robot dynamics.
 
-    After Robot instantiation, robot geometry must be defined through function set_dh_parms.
+    If no dh_parms are passed, robot geometry must be defined through function set_dh_parms later.
     """
     
     self.dof = int(dof)
@@ -53,6 +64,9 @@ class Robot(object):
     self.dyn_parms_order = 'Khalil'
     
     self._gen_symbols()
+
+    if dh_parms:
+      self.set_dh_parms(dh_parms)
   
   
   def __repr__(self) :
@@ -64,9 +78,6 @@ class Robot(object):
     
     subs_dict = collections.OrderedDict
     
-    def new_sym( name ):
-      return sympy.Symbol(name, real=True)
-
     def sym_skew(v):
       return sympy.Matrix( [ [     0, -v[2],  v[1] ],
                              [  v[2],     0, -v[0] ],
@@ -74,12 +85,12 @@ class Robot(object):
 
     dof = self.dof
     
-    #q = self.q = [ new_sym('q_'+str(i+1)) for i in range(self.dof) ]
-    #dq = self.dq = [ new_sym('dq_'+str(i+1)) for i in range(self.dof) ]
-    #ddq = self.ddq = [ new_sym('ddq_'+str(i+1)) for i in range(self.dof) ]
-    q = self.q = sympy.Matrix( [ [new_sym('q'+str(i+1))] for i in range(self.dof) ] )
-    dq = self.dq = sympy.Matrix( [ [new_sym('dq'+str(i+1))] for i in range(self.dof) ] )
-    ddq = self.ddq = sympy.Matrix( [ [new_sym('ddq'+str(i+1))] for i in range(self.dof) ] )
+    #q = self.q = [ _new_sym('q_'+str(i+1)) for i in range(self.dof) ]
+    #dq = self.dq = [ _new_sym('dq_'+str(i+1)) for i in range(self.dof) ]
+    #ddq = self.ddq = [ _new_sym('ddq_'+str(i+1)) for i in range(self.dof) ]
+    q = self.q = sympy.Matrix( [ [_new_sym('q'+str(i+1))] for i in range(self.dof) ] )
+    dq = self.dq = sympy.Matrix( [ [_new_sym('dq'+str(i+1))] for i in range(self.dof) ] )
+    ddq = self.ddq = sympy.Matrix( [ [_new_sym('ddq'+str(i+1))] for i in range(self.dof) ] )
     
     m = self.m = list( range( self.dof ) )
 
@@ -109,15 +120,15 @@ class Robot(object):
     
     for i in range( dof ):
       
-      m[i] = new_sym('m_'+str(i+1))
+      m[i] = _new_sym('m_'+str(i+1))
       
-      r[i] = sympy.Matrix( [ new_sym( 'r_'+str(i+1)+dim ) for dim in ['x','y','z'] ] )
+      r[i] = sympy.Matrix( [ _new_sym( 'r_'+str(i+1)+dim ) for dim in ['x','y','z'] ] )
       
       mr[i] = m[i] * r[i]
-      l[i] = sympy.Matrix( [ new_sym( 'l_'+str(i+1)+dim ) for dim in ['x','y','z'] ] )
+      l[i] = sympy.Matrix( [ _new_sym( 'l_'+str(i+1)+dim ) for dim in ['x','y','z'] ] )
       
-      Is[i] = [ new_sym( 'I_'+str(i+1)+elem ) for elem in ['xx','xy','xz', 'yy', 'yz', 'zz'] ]
-      Ls[i] = [ new_sym( 'L_'+str(i+1)+elem ) for elem in ['xx','xy','xz', 'yy', 'yz', 'zz'] ]
+      Is[i] = [ _new_sym( 'I_'+str(i+1)+elem ) for elem in ['xx','xy','xz', 'yy', 'yz', 'zz'] ]
+      Ls[i] = [ _new_sym( 'L_'+str(i+1)+elem ) for elem in ['xx','xy','xz', 'yy', 'yz', 'zz'] ]
 
       I[i] = sympy.Matrix( [ [ Is[i][0], Is[i][1], Is[i][2] ],
                              [ Is[i][1], Is[i][3], Is[i][4] ],
@@ -127,8 +138,8 @@ class Robot(object):
                              [ Ls[i][1], Ls[i][3], Ls[i][4] ],
                              [ Ls[i][2], Ls[i][4], Ls[i][5] ] ] )
       
-      fv[i] = new_sym( 'fv_'+str(i+1))
-      fc[i] = new_sym( 'fc_'+str(i+1))
+      fv[i] = _new_sym( 'fv_'+str(i+1))
+      fc[i] = _new_sym( 'fc_'+str(i+1))
 
       
       L_funcof_I[i] = I[i] + m[i] * sym_skew(r[i]).T * sym_skew(r[i])
@@ -157,7 +168,7 @@ class Robot(object):
     """
     Define the Robot geometry using Denavit-Hartenberg notation.
 
-    Must be called after Robot instance creation.
+    Not necessary to call if dh_parms was already passed to constructor function.
     """
     
     if len( dh_parms_list ) != self.dof:
@@ -166,8 +177,30 @@ class Robot(object):
     self.dh_parms = []
     
     for i in range( self.dof ):
+      
       if len( dh_parms_list[i] ) != 4:
-        raise Exception('Robot.set_geometry(): wrong number of Denavit-Hartenberg parameters (must be 4 per link).' )
+        raise Exception('Robot.set_dh_parms: wrong number of Denavit-Hartenberg parameters (must be 4 per link).' )
+
+      for j,p in enumerate(dh_parms_list[i]):
+
+        for v in sympy.sympify(p).free_symbols:
+          
+          v=str(v)
+          if v[0] == 'q':
+            
+            if len(v) > 1:
+              try:
+                num = int(v[1:])
+              except:
+                num = 1
+              if num <= 0 or num > self.dof:
+                raise Exception("Robot.set_dh_parms: Joint position symbol \'%s\' out of robot joint range (from 1 to %d)!" % (v,self.dof))
+
+            else:
+              temp = list(dh_parms_list[i])
+              temp[j] = sympy.sympify( temp[j] ).subs( {_generic_joint_symb:self.q[i]} )
+              dh_parms_list[i] = tuple(temp)
+            
       self.dh_parms.append( dh_parms_list[i] )
       
     return self
