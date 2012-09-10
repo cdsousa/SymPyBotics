@@ -14,60 +14,61 @@
 import collections
 import sympy
 
+
+
 def _new_sym( name ):
-  return sympy.Symbol(name, real=True)
-  
-def q_num(i):
-    return _new_sym('q'+str(i))
-  
-_generic_joint_symb = _new_sym('q')
-  
-q = _generic_joint_symb
+  return sympy.symbols(name, real=True)
 
 
 class Robot(object):
   """Class that generates and holds robot geometric and kinematic information, and dynamic parameter symbols."""
 
+
+  _joint_pos_symb = _new_sym('q')
+
+  q = _joint_pos_symb
+
+  _dh_alpha , _dh_a , _dh_d , _dh_theta = _new_sym('alpha,a,d,theta')
+  _default_dh_symbols = ( _dh_alpha , _dh_a , _dh_d , _dh_theta  )
+
+  _cos = sympy.cos
+  _sin = sympy.sin
+  _default_dh_transfmat = sympy.Matrix( [ 
+    [ _cos(_dh_theta), -_sin(_dh_theta)*_cos(_dh_alpha),  _sin(_dh_theta)*_sin(_dh_alpha), _dh_a*_cos(_dh_theta) ],
+    [ _sin(_dh_theta),  _cos(_dh_theta)*_cos(_dh_alpha), -_cos(_dh_theta)*_sin(_dh_alpha), _dh_a*_sin(_dh_theta) ],
+    [          0,             _sin(_dh_alpha),             _cos(_dh_alpha),            _dh_d ],
+    [          0,                      0,                      0,            1 ]
+    ] )
+    
   
-  def __init__(self,dof,name,shortname=None,dh_parms=None):
+  def __init__(self,name,dh_parms,shortname=None):
     """
     Create Robot instance with data structures for robot geometry and symbols of robot dynamics.
-
-    If no dh_parms are passed, robot geometry must be defined through function set_dh_parms later.
     """
     
-    self.dof = int(dof)
+    self.dof = len(dh_parms)
+    
     self.name = str(name)
     if shortname != None :
       self.shortname = str(shortname).replace(' ','_').replace('.','_')
     else :
-      self.shortname = name.replace(' ','_').replace('.','_')
+      self.shortname = ''.join(c for c in name.replace(' ','_').replace('.','_') if c.isalnum() or c == '_')
     
+    self.dh_symbols = Robot._default_dh_symbols
+    self.dh_transfmat = Robot._default_dh_transfmat
     
-    alpha , a , d , theta = sympy.symbols('alpha,a,d,theta',real=True)
-    default_dh_symbols = [ alpha , a , d , theta  ]
+    self.dyn_parms_order = 'Khalil'
 
-    cos = sympy.cos
-    sin = sympy.sin
-    default_dh_transfmat = sympy.Matrix( [[ cos(theta), -sin(theta)*cos(alpha),  sin(theta)*sin(alpha), a*cos(theta) ],
-                                         [ sin(theta),  cos(theta)*cos(alpha), -cos(theta)*sin(alpha), a*sin(theta) ],
-                                         [          0,             sin(alpha),             cos(alpha),            d ],
-                                         [          0,                      0,                      0,            1 ]] )
-    
     #g_a = sympy.symbols('g_a',real=True)
     g_a = 9.81
     self.gravity = sympy.Matrix([[0.0],[0.0],[-g_a]])
     
-    self.dh_symbols = default_dh_symbols
-    self.dh_transfmat = default_dh_transfmat
-    
-    self.dyn_parms_order = 'Khalil'
     
     self._gen_symbols()
 
-    if dh_parms:
-      self.set_dh_parms(dh_parms)
+    self._set_dh_parms(dh_parms)
   
+
   
   def __repr__(self) :
     return 'Robot instance: ' + self.name
@@ -164,11 +165,9 @@ class Robot(object):
     
     
     
-  def set_dh_parms( self, dh_parms_list ):
+  def _set_dh_parms( self, dh_parms_list ):
     """
     Define the Robot geometry using Denavit-Hartenberg notation.
-
-    Not necessary to call if dh_parms was already passed to constructor function.
     """
     
     if len( dh_parms_list ) != self.dof:
@@ -186,7 +185,7 @@ class Robot(object):
         for v in sympy.sympify(p).free_symbols:
           
           v=str(v)
-          if v[0] == 'q':
+          if v[0] == str(Robot._joint_pos_symb):
             
             if len(v) > 1:
               try:
@@ -198,7 +197,7 @@ class Robot(object):
 
             else:
               temp = list(dh_parms_list[i])
-              temp[j] = sympy.sympify( temp[j] ).subs( {_generic_joint_symb:self.q[i]} )
+              temp[j] = sympy.sympify( temp[j] ).subs( {Robot._joint_pos_symb:self.q[i]} )
               dh_parms_list[i] = tuple(temp)
             
       self.dh_parms.append( dh_parms_list[i] )

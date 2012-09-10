@@ -235,16 +235,16 @@ def find_dyn_parm_deps( dof, parm_num, regressor_func ):
       else:
           ddi.append(i)
   dbn = len(dbi)
-  
+
   P = numpy.mat(numpy.eye(parm_num))[ :, dbi+ddi ]
   Pb = P[:,:dbn]
   Pd = P[:,dbn:]
-  
-  Rbd1 = numpy.linalg.qr( Z*P, mode='r' )
+
+  Rbd1 = numpy.mat(numpy.linalg.qr( Z*P, mode='r' ))
   Rb1 = Rbd1[:dbn,:dbn]
   Rd1 = Rbd1[:dbn,dbn:]
-  
-  Kd = ( numpy.linalg.inv(Rb1) * Rd1 ).round(round)
+
+  Kd = numpy.mat( ( numpy.linalg.inv(Rb1) * Rd1 ).round(round) )
 
   return Pb,Pd,Kd
 

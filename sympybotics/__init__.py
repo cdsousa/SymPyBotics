@@ -13,7 +13,6 @@
 """Symbolic manipulation of robot geometric, kinematic and dynamic models."""
 
 
-from .robot import q
 from .robot import Robot
 from . import geomkinem
 from . import dynamic
@@ -21,4 +20,4 @@ from . import codegen
 from . import codegen_robot
 from . import tools
 
-__all__ = [ 'q', 'Robot', 'geomkinem', 'dynamic', 'codegen', 'codegen_robot' ]
+__all__ = [ 'Robot', 'geomkinem', 'dynamic', 'codegen', 'codegen_robot' ]
