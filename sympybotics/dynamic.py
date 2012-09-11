@@ -10,6 +10,29 @@
 #                  http://www.gnu.org/licenses/
 ###############################################################################
 
+##### For both Python 2 and Python 3 compatiblility:
+import sys
+if sys.version_info.major >= 3:
+    def compatible_exec(source, g=None,l=None):
+      if g:
+        if l:
+          exec(source, g, l)
+        else:
+          exec(source, g)
+      else:
+        exec(source)
+else:
+    eval(compile("""\
+def compatible_exec(source, g=None,l=None):
+      if g:
+        if l:
+          exec source in g, l
+        else:
+          exec source in g
+      else:
+        exec source
+""",
+    "<exec_function>", "exec"))
 
 import numpy
 import sympy
@@ -48,15 +71,19 @@ class Dyn(object):
     self.func_def_g = memoize(codegen_robot.dyn_matrix_to_func)( 'python', self.g_ivs,  self.g, 'g_func', 0, rbt.dof, self.delta  )
     self.func_def_f = memoize(codegen_robot.dyn_matrix_to_func)( 'python', [],  self.f, 'f_func', 1, rbt.dof, self.delta  )
 
-    global sin, cos
+    global sin, cos, sign
     sin = numpy.sin
     cos = numpy.cos
-    exec(self.func_def_regressor,globals())
+    sign = numpy.sign
+    compatible_exec(self.func_def_regressor,globals())
     Pb, Pd, Kd = memoize(dynamic_algorithms.find_dyn_parm_deps)( rbt.dof, self.n_delta, regressor_func )
     
     self.Pb = sympy.Matrix(Pb).applyfunc(lambda x: x.nsimplify())
     self.Pd = sympy.Matrix(Pd).applyfunc(lambda x: x.nsimplify())
     self.Kd = sympy.Matrix(Kd).applyfunc(lambda x: x.nsimplify())
+
+    self.base_idxs = ( numpy.matrix([[i for i in range(self.n_delta)]]) * numpy.matrix(Pb) ).astype(float).astype(int).tolist()[0]
     
     self.beta = ( self.Pb.T + self.Kd * self.Pd.T ) * self.delta
+    self.n_beta = len( self.beta )
 
