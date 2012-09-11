@@ -232,49 +232,18 @@ class Robot(object):
     return parms
 
 
-
-  
-  
   
   def gen_geometric_model(self):
-    """Generate and return an object with Robot symbolic geometric transformations."""
-
+    """Generate symbolic geometric model member object."""
     from . import geomkinem
-
-    self.geom = geomkinem.gen_geometric_model(self)
-    
-    self.Tdhi = self.geom.Tdhi
-    self.Tdhi_inv = self.geom.Tdhi_inv
-    self.Rdhi = self.geom.Rdhi
-    self.pdhi = self.geom.pdhi
-    self.Ti = self.geom.Ti
-    self.Ri = self.geom.Ri
-    self.pi = self.geom.pi
-    self.zi = self.geom.zi
-    self.Si = self.geom.Si
-    
+    self.geom = geomkinem.Geom(self)
     return self
 
 
-  def Ji( self, link=None ):
-    """Return symbolic Jacobian matrix relactive to specified link frame."""
-    
-    if link == None : link = self.dof
-    return self.Jpi[link].col_join( self.Joi[link] )
-  
-
   def gen_kinematic_model( self ):
-    """Generate and return an object with Robot symbolic Jacobians."""
-
+    """Generate symbolic kinematic model member object."""
     from . import geomkinem
-    
-    self.kinem = geomkinem.gen_kinematic_model(self,self.geom)
-    
-    self.Jpi = self.kinem.Jpi
-    self.Joi = self.kinem.Joi
-    self.Jcpi = self.kinem.Jcpi
-    self.Jcoi = self.kinem.Jcoi
-
+    self.kinem = geomkinem.Kinem(self,self.geom)
     return self
 
 
