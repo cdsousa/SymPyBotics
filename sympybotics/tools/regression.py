@@ -97,7 +97,7 @@ def sdp( c, Ai_blocks, solver='dsdp', verbose=0, interpret=False, maxiters=1000,
 
   if solver == 'conelp': solver == ''
 
-  cvxopt.solvers.options['show_progress'] = 1 if verbose >= 0 else 0
+  cvxopt.solvers.options['show_progress'] = (1 if verbose > 0 else 0)
   cvxopt.solvers.options['maxiters'] = maxiters #positive integer (default: 100)
 
   cvxopt.solvers.options['DSDP_MaxIts'] = maxiters #positive integer
@@ -127,9 +127,8 @@ def sdp( c, Ai_blocks, solver='dsdp', verbose=0, interpret=False, maxiters=1000,
               s = 'primal infeasible'
           elif sol[sp] is not None:
               s = 'dual infeasible'
-          #else:
-          #    if verbose >= 0: print('optimal')
-          #    return numpy.matrix(sol['x'])
+          else:
+              s = 'unknown'
 
           if verbose >= 0: print(s)
           if verbose >= 0: print(sp + ': ' + str(sol[sp]) + '\n' + sd + ': ' + str(sol[sd]))
