@@ -50,8 +50,8 @@ def _gen_parms_subs( parms_symbols, name = 'parms' ):
         subs.append( ( str(parms_symbols[i]), name+'['+str(i)+']' ) )
     return subs
 
- 
-def dyn_matrix_to_func( lang, ivars, matrix, funcname, qderivlevel, dof, dynparam_symbols=[] ):
+
+def dyn_code_to_func( lang, code, funcname, qderivlevel, dof, dynparam_symbols=[] ):
     func_parms = []
     subs_pairs = []
     if dynparam_symbols:
@@ -61,6 +61,11 @@ def dyn_matrix_to_func( lang, ivars, matrix, funcname, qderivlevel, dof, dynpara
         for i in range(qderivlevel+1):
             func_parms.append('d'*i+'q')
         subs_pairs += _gen_q_dq_ddq_subs(dof)
-    return codegen.sympymatrix_to_func(  lang, ivars, matrix, funcname, func_parms, subs_pairs )
+    return codegen.code_to_func(  lang, code, funcname, func_parms, subs_pairs )
+
+
+def dyn_matrix_to_func( lang, ivars, matrix, funcname, qderivlevel, dof, dynparam_symbols=[] ):
+    code = codegen.optimize_code( (ivars, matrix.mat), ivarnames='aux' )
+    return dyn_code_to_func( lang, code, funcname, qderivlevel, dof, dynparam_symbols=[] )
 
 

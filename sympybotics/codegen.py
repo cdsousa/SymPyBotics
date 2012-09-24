@@ -277,12 +277,15 @@ def gen_c_func( code, func_parms, subs_pairs, func_name='func', outvar_name='out
     return ccode
 
 
+def code_to_func( lang, code, func_name, func_parms, subs_pairs ):
+  lang = lang.lower()
+  if lang in ['python','py'] : gen_func = gen_py_func
+  elif lang in ['c','c++'] : gen_func = gen_c_func
+  else: raise Exception('chosen language not supported.')
+  return gen_func( code, func_parms, subs_pairs, func_name, func_name+'_out' )
+
 
 def sympymatrix_to_func( lang, ivars, matrix, func_name, func_parms, subs_pairs ):
-    lang = lang.lower()
-    if lang in ['python','py'] : gen_func = gen_py_func
-    elif lang in ['c','c++'] : gen_func = gen_c_func
-    else: raise Exception('chosen language not supported.')
     code = optimize_code( (ivars, matrix.mat), ivarnames='aux' )
-    return gen_func( code, func_parms, subs_pairs, func_name, func_name+'_out' )
+    return code_to_func( lang, code, func_name, func_parms, subs_pairs )
 

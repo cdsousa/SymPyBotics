@@ -37,6 +37,7 @@ def compatible_exec(source, g=None,l=None):
 import numpy
 import sympy
 from . import dynamic_algorithms
+from . import codegen
 from . import codegen_robot
 from . import tools
 
@@ -54,28 +55,29 @@ class Dyn(object):
           return func( *args, **kwargs )
         return decorated_function
 
-    self.tau_ivs, self.tau = memoize(dynamic_algorithms.gen_tau_rne)( True, rbt )
-    self.Y_ivs, self.Y = memoize(dynamic_algorithms.gen_regressor_rne)( True, rbt, usefricdyn=usefricdyn )
-    self.M_ivs, self.M = memoize(dynamic_algorithms.gen_massmatrix_rne)( True, rbt )
-    self.c_ivs, self.c = memoize(dynamic_algorithms.gen_ccfterm_rne)( True, rbt )
-    self.g_ivs, self.g = memoize(dynamic_algorithms.gen_gravterm_rne)( True, rbt )
-    self.f = memoize(dynamic_algorithms.gen_fricterm)( rbt )
-
     self.delta = sympy.Matrix( rbt.dynparms(usefricdyn=usefricdyn) )
     self.n_delta =  len( self.delta )
 
-    self.func_def_tau = memoize(codegen_robot.dyn_matrix_to_func)( 'python', self.tau_ivs,  self.tau, 'tau_func', 2, rbt.dof, self.delta  )
-    self.func_def_regressor = memoize(codegen_robot.dyn_matrix_to_func)( 'python', self.Y_ivs, self.Y, 'regressor_func', 2, rbt.dof  )
-    self.func_def_M = memoize(codegen_robot.dyn_matrix_to_func)( 'python', self.M_ivs,  self.M, 'M_func', 0, rbt.dof, self.delta  )
-    self.func_def_c = memoize(codegen_robot.dyn_matrix_to_func)( 'python', self.c_ivs,  self.c, 'c_func', 1, rbt.dof, self.delta  )
-    self.func_def_g = memoize(codegen_robot.dyn_matrix_to_func)( 'python', self.g_ivs,  self.g, 'g_func', 0, rbt.dof, self.delta  )
-    self.func_def_f = memoize(codegen_robot.dyn_matrix_to_func)( 'python', [],  self.f, 'f_func', 1, rbt.dof, self.delta  )
+    tau_ivs, tau = memoize(dynamic_algorithms.gen_tau_rne)( True, rbt )
+    regressor_ivs, regressor = memoize(dynamic_algorithms.gen_regressor_rne)( True, rbt, usefricdyn=usefricdyn )
+    M_ivs, M = memoize(dynamic_algorithms.gen_massmatrix_rne)( True, rbt )
+    c_ivs, c = memoize(dynamic_algorithms.gen_ccfterm_rne)( True, rbt )
+    g_ivs, g = memoize(dynamic_algorithms.gen_gravterm_rne)( True, rbt )
+    f = memoize(dynamic_algorithms.gen_fricterm)( rbt )
 
+    self.tau_code = memoize(codegen.optimize_code)( (tau_ivs, tau.mat), ivarnames='aux' )
+    self.regressor_code = memoize(codegen.optimize_code)( (regressor_ivs, regressor.mat), ivarnames='aux' )
+    self.M_code = memoize(codegen.optimize_code)( (M_ivs, M.mat), ivarnames='aux' )
+    self.c_code = memoize(codegen.optimize_code)( (c_ivs, c.mat), ivarnames='aux' )
+    self.g_code = memoize(codegen.optimize_code)( (g_ivs, g.mat), ivarnames='aux' )
+    self.f_code = memoize(codegen.optimize_code)( ([], f.mat), ivarnames='aux' )
+    
+    func_def_regressor = memoize(codegen_robot.dyn_code_to_func)( 'python', self.regressor_code, 'regressor_func', 2, rbt.dof  )
     global sin, cos, sign
     sin = numpy.sin
     cos = numpy.cos
     sign = numpy.sign
-    compatible_exec(self.func_def_regressor,globals())
+    compatible_exec(func_def_regressor,globals())
     Pb, Pd, Kd = memoize(dynamic_algorithms.find_dyn_parm_deps)( rbt.dof, self.n_delta, regressor_func )
     
     self.Pb = sympy.Matrix(Pb).applyfunc(lambda x: x.nsimplify())
@@ -86,4 +88,5 @@ class Dyn(object):
     
     self.beta = ( self.Pb.T + self.Kd * self.Pd.T ) * self.delta
     self.n_beta = len( self.beta )
+
 
