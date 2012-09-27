@@ -18,8 +18,8 @@ from . import geomkinem
 
 def gen_geometric_kinematic_code( robot ):
 
-  geomauxv, geom = geomkinem.gen_geometric_model(robot,True)
-  kinemauxv, kinem = geomkinem.gen_kinematic_model(robot,geom,True)
+  geom = geomkinem.Geom(robot,True)
+  kinem = geomkinem.Kinem(robot,geom,True)
 
   all_p = []
   for p in geom.pi:
@@ -31,7 +31,7 @@ def gen_geometric_kinematic_code( robot ):
   for i in range(len(kinem.Jpi)):
     all_J += ( kinem.Jpi[i].col_join(kinem.Joi[i]) ).mat
 
-  geomkinem_code = codegen.optimize_code( ( geomauxv + kinemauxv, all_p + all_R + all_J ), ivarnames='aux' )
+  geomkinem_code = codegen.optimize_code( ( geom.ivars + kinem.ivars, all_p + all_R + all_J ), ivarnames='aux' )
 
   return geomkinem_code
 

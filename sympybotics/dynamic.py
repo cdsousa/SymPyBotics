@@ -43,7 +43,7 @@ from . import tools
 
 
 class Dyn(object):
-  """Robot dynamic model in symbolic and python code forms."""
+  """Robot dynamic model in code form."""
 
   def __init__( self, rbt, usefricdyn, memoize_func=None ):
 
@@ -97,6 +97,8 @@ class Dyn(object):
 
 
   def gen_member_funcs(self):
+    """Generate object member functions for dinamic terms calculation."""
+    
     
     tau_str = codegen_robot.dyn_code_to_func( 'python', self.tau_code, 'tau', 2, self.dof, self.delta )
     regressor_str = codegen_robot.dyn_code_to_func( 'python', self.regressor_code, 'regressor', 2, self.dof, self.delta )
