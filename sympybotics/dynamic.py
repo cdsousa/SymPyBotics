@@ -68,13 +68,13 @@ class Dyn(object):
     if usefricdyn:
       f = memoize(dynamic_algorithms.gen_fricterm)( rbt )
 
-    self.tau_code = memoize(codegen.optimize_code)( (tau_ivs, tau.mat), ivarnames='aux' )
-    self.regressor_code = memoize(codegen.optimize_code)( (regressor_ivs, regressor.mat), ivarnames='aux' )
-    self.M_code = memoize(codegen.optimize_code)( (M_ivs, M.mat), ivarnames='aux' )
-    self.c_code = memoize(codegen.optimize_code)( (c_ivs, c.mat), ivarnames='aux' )
-    self.g_code = memoize(codegen.optimize_code)( (g_ivs, g.mat), ivarnames='aux' )
+    self.tau_code = memoize(codegen.optimize_code)( (tau_ivs, sympy.flatten(tau)), ivarnames='aux' )
+    self.regressor_code = memoize(codegen.optimize_code)( (regressor_ivs, sympy.flatten(regressor)), ivarnames='aux' )
+    self.M_code = memoize(codegen.optimize_code)( (M_ivs, sympy.flatten(M)), ivarnames='aux' )
+    self.c_code = memoize(codegen.optimize_code)( (c_ivs, sympy.flatten(c)), ivarnames='aux' )
+    self.g_code = memoize(codegen.optimize_code)( (g_ivs, sympy.flatten(g)), ivarnames='aux' )
     if usefricdyn:
-      self.f_code = memoize(codegen.optimize_code)( ([], f.mat), ivarnames='aux' )
+      self.f_code = memoize(codegen.optimize_code)( ([], sympy.flatten(f)), ivarnames='aux' )
     
     func_def_regressor = memoize(codegen_robot.dyn_code_to_func)( 'python', self.regressor_code, 'regressor_func', 2, rbt.dof  )
     global sin, cos, sign
@@ -93,7 +93,7 @@ class Dyn(object):
     self.beta = ( self.Pb.T + self.Kd * self.Pd.T ) * self.delta
     self.n_beta = len( self.beta )
 
-    self.gen_member_funcs()
+    #self.gen_member_funcs()
 
 
   def gen_member_funcs(self):

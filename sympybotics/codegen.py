@@ -286,6 +286,6 @@ def code_to_func( lang, code, func_name, func_parms, subs_pairs ):
 
 
 def sympymatrix_to_func( lang, ivars, matrix, func_name, func_parms, subs_pairs ):
-    code = optimize_code( (ivars, matrix.mat), ivarnames='aux' )
+    code = optimize_code( (ivars, sympy.flatten(matrix)), ivarnames='aux' )
     return code_to_func( lang, code, func_name, func_parms, subs_pairs )
 

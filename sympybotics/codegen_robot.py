@@ -11,6 +11,8 @@
 ###############################################################################
 
 
+import sympy
+
 from . import codegen
 from . import geomkinem
 
@@ -23,13 +25,13 @@ def gen_geometric_kinematic_code( robot ):
 
   all_p = []
   for p in geom.pi:
-    all_p += p.mat
+    all_p += sympy.flatten(p)
   all_R = []
   for R in geom.Ri:
-    all_R += R.mat
+    all_R += sympy.flatten(R)
   all_J = []
   for i in range(len(kinem.Jpi)):
-    all_J += ( kinem.Jpi[i].col_join(kinem.Joi[i]) ).mat
+    all_J += sympy.flatten( kinem.Jpi[i].col_join(kinem.Joi[i]) )
 
   geomkinem_code = codegen.optimize_code( ( geom.ivars + kinem.ivars, all_p + all_R + all_J ), ivarnames='aux' )
 
@@ -65,7 +67,7 @@ def dyn_code_to_func( lang, code, funcname, qderivlevel, dof, dynparam_symbols=[
 
 
 def dyn_matrix_to_func( lang, ivars, matrix, funcname, qderivlevel, dof, dynparam_symbols=[] ):
-    code = codegen.optimize_code( (ivars, matrix.mat), ivarnames='aux' )
+    code = codegen.optimize_code( (ivars, sympy.flatten(matrix)), ivarnames='aux' )
     return dyn_code_to_func( lang, code, funcname, qderivlevel, dof, dynparam_symbols=[] )
 
 

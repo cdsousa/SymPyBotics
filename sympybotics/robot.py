@@ -216,12 +216,12 @@ class Robot(object):
 
       if parm_order == 'khalil' or parm_order == 'tensor first': # Lxx Lxy Lxz Lyy Lyz Lzz lx ly lz m
         parms += self.Ls[i]
-        parms += self.l[i].mat
+        parms += sympy.flatten(self.l[i])
         parms += [ self.m[i] ]
 
       elif parm_order == 'siciliano' or parm_order == 'mass first': # m lx ly lz Lxx Lxy Lxz Lyy Lyz Lzz
         parms += [ self.m[i] ]
-        parms += self.l[i].mat
+        parms += sympy.flatten(self.l[i])
         parms += self.Ls[i]
 
       else:
