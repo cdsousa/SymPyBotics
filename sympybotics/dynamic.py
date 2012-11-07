@@ -101,8 +101,8 @@ class Dyn(object):
     
     
     tau_str = codegen_robot.dyn_code_to_func( 'python', self.tau_code, 'tau', 2, self.dof, self.delta )
-    regressor_str = codegen_robot.dyn_code_to_func( 'python', self.regressor_code, 'regressor', 2, self.dof, self.delta )
-    M_str = codegen_robot.dyn_code_to_func( 'python', self.M_code, 'M', 0, self.dof )
+    regressor_str = codegen_robot.dyn_code_to_func( 'python', self.regressor_code, 'regressor', 2, self.dof )
+    M_str = codegen_robot.dyn_code_to_func( 'python', self.M_code, 'M', 0, self.dof, self.delta )
     g_str = codegen_robot.dyn_code_to_func( 'python', self.c_code, 'c', 1, self.dof, self.delta )
     c_str = codegen_robot.dyn_code_to_func( 'python', self.g_code, 'g', 0, self.dof, self.delta )
     if hasattr(self, 'f_code'):
@@ -124,6 +124,9 @@ class Dyn(object):
       func_return = func_lines[-1].split()[1]
       func_lines[-1] = func_lines[-1].replace( func_return, 'sympy.Matrix( ' + str(m) + ', ' + str(n) + ', ' + func_return + ' )' )
       func_str = '\n'.join(func_lines)
+
+      compatible_exec('self.'+func+'_str = '+func+'_str', globals(), locals())
+
       compatible_exec( func_str, globals() )
 
     self.tau = tau
