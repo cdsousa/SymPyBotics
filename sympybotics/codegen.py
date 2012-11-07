@@ -109,13 +109,15 @@ def code_remove_not_or_once_used( code ):
         usedin_oi = None
         if debug: print(i,v)
         for ai in range(i+1,len(retcode[0])):
-            if sympy.sympify(retcode[0][ai][1]).has(v):
-                uses += 1
+            count = sympy.sympify(retcode[0][ai][1]).has(v)
+            if count:
+                uses += count
                 usedin_ai = ai
                 # if debug: print('  used in',ai)
         for oi in range(len(retcode[1])):
-            if sympy.sympify(retcode[1][oi]).has(v):
-                uses += 1
+            count = sympy.sympify(retcode[1][oi]).count(v)
+            if count:
+                uses += count
                 usedin_oi = oi
                 # if debug: print('  used in out',oi)
         
