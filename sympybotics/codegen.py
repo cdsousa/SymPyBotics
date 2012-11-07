@@ -159,7 +159,39 @@ def code_rename_ivars_unsafe(code, ivarnames ):
   return retcode
 
 
-def optimize_code( code, ivarnames='iv', debug = True ) :
+def code_make_output_single_vars(code, ivarnames=None ):
+
+    retcode = copy.deepcopy(code)
+
+    if ivarnames:
+        cnt = 0
+
+    else:
+        if retcode[0]:
+            lastivar = str(retcode[0][-1][0])
+            for i in range(len(lastivar)):
+                if not lastivar[-i-1].isdigit(): break
+            if i > 0:
+                cnt = int(lastivar[-i:]) + 1
+                ivarnames = lastivar[:-i]
+            else:
+                cnt = 1
+                ivarnames = lastivar + '_'
+        else:
+            cnt = 0
+            ivarnames = 'outputiv_'
+
+    for i in range(len(retcode[1])):
+        if not sympy.sympify(retcode[1][i]).is_Atom:
+            new_symbol = sympy.Symbol(ivarnames+str(cnt),real=True)
+            retcode[0].append( (new_symbol, retcode[1][i]) )
+            retcode[1][i] = new_symbol
+            cnt += 1
+
+    return retcode
+
+
+def optimize_code( code, ivarnames='iv', singlevarout=False, debug = True ) :
   if debug: print('Optimizing code')
   retcode = copy.deepcopy(code)
   if debug: print('code_apply_func trigsimp')
@@ -180,8 +212,11 @@ def optimize_code( code, ivarnames='iv', debug = True ) :
   retcode = code_remove_not_compound(retcode)
   if debug: print('code_remove_not_or_once_used')
   retcode = code_remove_not_or_once_used(retcode)
-  if debug: print('code_rename_ivars')
+  if debug: print('code_rename_ivars (unsafe)')
   retcode = code_rename_ivars_unsafe(retcode, ivarnames=ivarnames)
+  if singlevarout:
+    if debug: print('code_make_output_single_vars')
+    retcode = code_make_output_single_vars(retcode)
   if debug: print('Done.')
   return retcode
 
