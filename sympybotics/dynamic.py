@@ -93,10 +93,12 @@ class Dyn(object):
     self.beta = ( self.Pb.T + self.Kd * self.Pd.T ) * self.delta
     self.n_beta = len( self.beta )
 
+    self.base_regressor_code = codegen.optimize_code( ( self.regressor_code[0] , sympy.flatten( sympy.Matrix(self.regressor_code[1]).reshape(self.dof,self.n_delta) * self.Pb ) ) )
+
     #self.gen_member_funcs()
 
 
-  def gen_member_funcs(self):
+  def _gen_member_funcs(self):
     """Generate object member functions for dinamic terms calculation."""
     
     
