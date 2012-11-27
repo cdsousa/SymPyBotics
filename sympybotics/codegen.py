@@ -241,7 +241,7 @@ def code_back_to_expressions(code):
     return exps
 
 
-def code_to_string( code, outvarname='out', indent='', realtype='', line_end='' ):
+def code_to_string( code, outvar_name='out', indent='', realtype='', line_end='' ):
     
     codestr = ''
     
@@ -252,7 +252,7 @@ def code_to_string( code, outvarname='out', indent='', realtype='', line_end='' 
     
     codestr += '\n'
     for i in range( len(code[1]) ) :
-        codestr += indent + outvarname + '['+str(i)+'] = ' + sympy.ccode( code[1][i] ) + line_end + '\n'
+        codestr += indent + outvar_name + '['+str(i)+'] = ' + sympy.ccode( code[1][i] ) + line_end + '\n'
     
     return codestr
 
@@ -275,48 +275,64 @@ def codestring_count( codestring, resume=False ):
     return ops, {'add':adds, 'mul':muls, 'total':adds+muls }
 
 
+def gen_py_func( code, func_parms, subs_pairs, func_name='func', outvar_name='out' ):
 
-def gen_py_func( code, func_parms, subs_pairs, funcname='func', outvarname='out' ):
-    
     indent = 4*' '
-    
-    pycode = 'def ' + funcname + '('
+
+    pycode = 'def ' + func_name + '('
     if func_parms:
         pycode += ' ' + func_parms[0]
         for parm in func_parms[1:] :
             pycode += ', ' + parm
         pycode += ' '
-    pycode += ') :\n\n' 
-    
-    pycode += indent + outvarname + ' = [0]*' + str( len(code[1]) ) + '\n\n'
-    
-    mainpycode = code_to_string( code, outvarname, indent )
+    pycode += ') :\n\n'
+
+    pycode += indent + outvar_name + ' = [0]*' + str( len(code[1]) ) + '\n\n'
+
+    mainpycode = code_to_string( code, outvar_name, indent )
     for (old,new) in subs_pairs: mainpycode = mainpycode.replace(old,new)
     pycode += mainpycode
-    
-    pycode += '\n' + indent + 'return ' + outvarname + '\n'  
+
+    pycode += '\n' + indent + 'return ' + outvar_name + '\n'
     return pycode
 
 
 def gen_c_func( code, func_parms, subs_pairs, func_name='func', outvar_name='out' ):
-    
-    indent = 2*' ' 
-    
+
+    indent = 2*' '
+
     ccode = 'void ' + func_name + '( double* ' + outvar_name
     for parm in func_parms :
         ccode += ', const double* ' + parm
     ccode += ' )\n{\n'
-    
+
     mainccode = code_to_string( code, outvar_name, indent, 'double', ';' )
     for (old,new) in subs_pairs: mainccode = mainccode.replace(old,new)
-    
-    ccode += mainccode + '}\n'
+
+    ccode += mainccode + '\n'+indent+'return;\n}\n'
+    return ccode
+
+
+def gen_pyx_func( code, func_parms, subs_pairs, func_name='func', outvar_name='out' ):
+
+    indent = 4*' '
+
+    ccode = 'cdef void ' + func_name + '( double* ' + outvar_name
+    for parm in func_parms :
+        ccode += ', double* ' + parm
+    ccode += ' ):\n'
+
+    mainccode = code_to_string( code, outvar_name, indent, 'cdef double' )
+    for (old,new) in subs_pairs: mainccode = mainccode.replace(old,new)
+
+    ccode += mainccode + '\n'+indent+'return\n'
     return ccode
 
 
 def code_to_func( lang, code, func_name, func_parms, subs_pairs ):
   lang = lang.lower()
   if lang in ['python','py'] : gen_func = gen_py_func
+  elif lang in ['cython','pyx'] : gen_func = gen_pyx_func
   elif lang in ['c','c++'] : gen_func = gen_c_func
   else: raise Exception('chosen language not supported.')
   return gen_func( code, func_parms, subs_pairs, func_name, func_name+'_out' )
