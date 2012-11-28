@@ -18,7 +18,7 @@ from . import geomkinem
 from . import dynamic_algorithms
 from . import codegen
 from . import codegen_robot
-from . import tools
 from . import dynamic
+#from . import tools
 
 __all__ = [ 'Robot', 'geomkinem', 'dynamic_algorithms', 'codegen', 'codegen_robot', 'dynamic' ]

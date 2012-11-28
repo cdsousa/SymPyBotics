@@ -48,27 +48,34 @@ def prepare_sdp( var_symbs, LMI_matrix, split_diag_blocks=True):
     v = var_symbs
     vn = len(v)
 
-    if split_diag_blocks:
-        blocks = get_diag_blocks(LMI_matrix)
-
-        blocks_LMI_matrix = []
-
-        for a,b in zip( [0]+blocks[:-1] , blocks ):
-            blocks_LMI_matrix.append( LMI_matrix[ a:b, a:b ] )
-
-        print('Split into %d diagonal blocks.'%(len(blocks)))
-
+    if isinstance( LMI_matrix, list ) or isinstance( LMI_matrix, tuple ):
+      
+      blocks_LMI_matrix = LMI_matrix
+      
     else:
-        blocks_LMI_matrix = [ LMI_matrix ]
+      
+      if split_diag_blocks:
+        
+          blocks = get_diag_blocks(LMI_matrix)
+          blocks_LMI_matrix = []
+          for a,b in zip( [0]+blocks[:-1] , blocks ):
+              blocks_LMI_matrix.append( LMI_matrix[ a:b, a:b ] )
+          print('Split into %d diagonal blocks.'%(len(blocks)))
+          
+      else:
+        
+          blocks_LMI_matrix = [ LMI_matrix ]
 
 
     blocks_Fi = []
+    
+    zero_subs = dict(zip(v,[0]*vn))
 
     for LMI_matrix in blocks_LMI_matrix:
 
         Fi = [0]*(1+vn)
 
-        Fsym = LMI_matrix.subs( dict(zip(v,[0]*vn)))
+        Fsym = LMI_matrix.subs( zero_subs )
         Fi[0] = numpy.matrix(Fsym).astype(float)
 
         for i,s in enumerate(v):
