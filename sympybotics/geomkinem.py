@@ -14,6 +14,7 @@
 import sympy
 
 from . import intermediate
+from .robot import _joint_i_symb
 
 
 class Geom(object):
@@ -43,27 +44,17 @@ class Geom(object):
 
     dh_transfmat_inv = inverse_T(robot.dh_transfmat)
 
-    robot.links_sigma = [0]*robot.dof
+    q_subs = dict([(_joint_i_symb(i+1),robot.q[i]) for i in range(robot.dof)])
 
     for l in range(robot.dof):
 
       subs_dict = dict( zip( robot.dh_symbols, robot.dh_parms[l] ) )
 
-      self.Tdhi[l+1] = robot.dh_transfmat.subs(subs_dict)
-      self.Tdhi_inv[l+1] = dh_transfmat_inv.subs(subs_dict)
+      self.Tdhi[l+1] = robot.dh_transfmat.subs(subs_dict).subs(q_subs)
+      self.Tdhi_inv[l+1] = dh_transfmat_inv.subs(subs_dict).subs(q_subs)
       self.Rdhi[l+1] = self.Tdhi[l+1][0 :3 ,0 :3 ]
       self.pdhi[l+1] = self.Tdhi[l+1][0 :3 ,3 ]
 
-      try:
-        if subs_dict[ theta ].has( robot.q[l,0] ):
-          robot.links_sigma[l] = 0
-          # print 'joint',l+1,'is revolute'
-      except: pass
-      try:
-        if subs_dict[ d ].has( robot.q[l,0] ):
-          robot.links_sigma[l] = 1
-          # print 'joint',l+1,'is prismatic'
-      except: pass
 
     self.Ti = list(range(robot.dof+1 ))
     self.Ti[0] = sympy.eye(4)
@@ -194,7 +185,7 @@ class Kinem(object):
     self.Jcpi = list(range(0 ,robot.dof+1 ))
     self.Jcoi = self.Joi
     for l in range(1 ,robot.dof+1 ):
-      self.Jcpi[l] = m_intervar_func( self.Jpi[l] - sym_skew( geom.Ri[l]*robot.l[l-1] ) * self.Joi[l] )
+      self.Jcpi[l] = m_intervar_func( self.Jpi[l] - sym_skew( geom.Ri[l]*sympy.Matrix(robot.l[l-1]) ) * self.Joi[l] )
 
 
     self.Jci = list(range(0 ,robot.dof+1 ))
