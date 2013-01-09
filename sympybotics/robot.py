@@ -19,14 +19,33 @@ import sympy
 def _new_sym( name ):
   return sympy.symbols(name, real=True)
 
+def _elements_to_tensor(elems):
+  return sympy.Matrix( [ [ elems[0], elems[1], elems[2] ],
+                         [ elems[1], elems[3], elems[4] ],
+                         [ elems[2], elems[4], elems[5] ] ] )
+
+class _elementslist_to_tensorlist():
+  def __init__(self,elementslist):
+    self.l = elementslist
+  def __getitem__(self,i):
+    return sympy.Matrix( [ [ self.l[i][0], self.l[i][1], self.l[i][2] ],
+                           [ self.l[i][1], self.l[i][3], self.l[i][4] ],
+                           [ self.l[i][2], self.l[i][4], self.l[i][5] ] ] )
+
+def _sym_skew(v):
+    return sympy.Matrix( [ [     0, -v[2],  v[1] ],
+                           [  v[2],     0, -v[0] ],
+                           [ -v[1],  v[0],     0 ] ] )
+
+_joint_symb = _new_sym('q')
+
+def _joint_i_symb(i):
+  return _new_sym( 'q'+str(i) )
 
 class Robot(object):
   """Class that generates and holds robot geometric and kinematic information, and dynamic parameter symbols."""
 
-
-  _joint_pos_symb = _new_sym('q')
-
-  q = _joint_pos_symb
+  q = _joint_symb
 
   _dh_alpha , _dh_a , _dh_d , _dh_theta = _new_sym('alpha,a,d,theta')
   _default_dh_symbols = ( _dh_alpha , _dh_a , _dh_d , _dh_theta  )
@@ -68,21 +87,22 @@ class Robot(object):
 
     self._set_dh_parms(dh_parms)
   
-
+  def __setattr__(self, name, value):
+    object.__setattr__(self, name, value)
+    if name == 'Le':
+      object.__setattr__(self, 'L', _elementslist_to_tensorlist(value))
+    elif name == 'Ie':
+      object.__setattr__(self, 'I', _elementslist_to_tensorlist(value))
   
   def __repr__(self) :
     return 'Robot instance: ' + self.name
-  
+
   
   def _gen_symbols( self ) :
     """Generate robot dynamic symbols and populates Robot instance with them. (internal function)"""
     
     subs_dict = collections.OrderedDict
     
-    def sym_skew(v):
-      return sympy.Matrix( [ [     0, -v[2],  v[1] ],
-                             [  v[2],     0, -v[0] ],
-                             [ -v[1],  v[0],     0 ] ] )
 
     dof = self.dof
     
@@ -94,17 +114,15 @@ class Robot(object):
     ddq = self.ddq = sympy.Matrix( [ [_new_sym('ddq'+str(i+1))] for i in range(self.dof) ] )
     
     m = self.m = list( range( self.dof ) )
+    l = self.l = list( range( self.dof ) )
+    Le = self.Le = list( range( self.dof ) )
+
+    L = self.L
 
     r = self.r = list( range( self.dof ) )
+    Ie = self.Ie = list( range( self.dof ) )
     
-    mr = self.ml = list( range( self.dof ) )
-    l = self.l = list( range( self.dof ) )
-    
-    Is = self.Is = list( range( self.dof ) )
-    Ls = self.Ls = list( range( self.dof ) )
-    
-    I = self.I = list( range( self.dof ) )
-    L = self.L = list( range( self.dof ) )
+    I = self.I
     
     fv = self.fv = list( range( self.dof ) )
     fc = self.fc = list( range( self.dof ) )
@@ -116,35 +134,21 @@ class Robot(object):
     dict_L2Iexp = self.dict_L2Iexp = subs_dict()
     dict_l2mr = self.dict_l2mr = subs_dict()
     dict_r2lm = self.dict_r2lm = subs_dict()
-
-
     
     for i in range( dof ):
       
       m[i] = _new_sym('m_'+str(i+1))
-      
-      r[i] = sympy.Matrix( [ _new_sym( 'r_'+str(i+1)+dim ) for dim in ['x','y','z'] ] )
-      
-      mr[i] = m[i] * r[i]
       l[i] = sympy.Matrix( [ _new_sym( 'l_'+str(i+1)+dim ) for dim in ['x','y','z'] ] )
+      Le[i] = [ _new_sym( 'L_'+str(i+1)+elem ) for elem in ['xx','xy','xz', 'yy', 'yz', 'zz'] ]
       
-      Is[i] = [ _new_sym( 'I_'+str(i+1)+elem ) for elem in ['xx','xy','xz', 'yy', 'yz', 'zz'] ]
-      Ls[i] = [ _new_sym( 'L_'+str(i+1)+elem ) for elem in ['xx','xy','xz', 'yy', 'yz', 'zz'] ]
-
-      I[i] = sympy.Matrix( [ [ Is[i][0], Is[i][1], Is[i][2] ],
-                             [ Is[i][1], Is[i][3], Is[i][4] ],
-                             [ Is[i][2], Is[i][4], Is[i][5] ] ] )
-
-      L[i] = sympy.Matrix( [ [ Ls[i][0], Ls[i][1], Ls[i][2] ],
-                             [ Ls[i][1], Ls[i][3], Ls[i][4] ],
-                             [ Ls[i][2], Ls[i][4], Ls[i][5] ] ] )
+      r[i] = sympy.Matrix( [ _new_sym( 'r_'+str(i+1)+dim ) for dim in ['x','y','z'] ] )      
+      Ie[i] = [ _new_sym( 'I_'+str(i+1)+elem ) for elem in ['xx','xy','xz', 'yy', 'yz', 'zz'] ]
       
       fv[i] = _new_sym( 'fv_'+str(i+1))
       fc[i] = _new_sym( 'fc_'+str(i+1))
 
-      
-      L_funcof_I[i] = I[i] + m[i] * sym_skew(r[i]).T * sym_skew(r[i])
-      I_funcof_L[i] = L[i] - m[i] * sym_skew(r[i]).T * sym_skew(r[i])
+      L_funcof_I[i] = I[i] + m[i] * _sym_skew(r[i]).T * _sym_skew(r[i])
+      I_funcof_L[i] = L[i] - m[i] * _sym_skew(r[i]).T * _sym_skew(r[i])
 
       for elem,exprss in enumerate(I_funcof_L[i]):
         dict_I2Lexp[ I[i][elem] ] = exprss
@@ -153,13 +157,14 @@ class Robot(object):
         dict_L2Iexp[ L[i][elem] ] = exprss
 
       for elem in range(3):
-        dict_l2mr[ l[i][elem] ] = mr[i][elem]
+        dict_l2mr[ l[i][elem] ] = m[i] * r[i][elem]
         dict_r2lm[ r[i][elem] ] = l[i][elem] / m[i]
 
       self.latex_symbols = {}
       for i in range(self.dof):
-        self.latex_symbols[ self.dq[i] ] = r'\dot{q}_'+str(i+1)
-        self.latex_symbols[ self.ddq[i] ] = r'\ddot{q}_'+str(i+1)
+        self.latex_symbols[ self.q[i] ] = r'q_{'+str(i+1)+'}'
+        self.latex_symbols[ self.dq[i] ] = r'\dot{q}_{'+str(i+1)+'}'
+        self.latex_symbols[ self.ddq[i] ] = r'\ddot{q}_{'+str(i+1)+'}'
 
     return self
     
@@ -174,6 +179,10 @@ class Robot(object):
       raise Exception('Robot.set_geometry(): provided number of links differ from robot dof (%d vs %d).' % ( len( dh_parms_list ), self.dof) )
       
     self.dh_parms = []
+
+    self.links_sigma = [0]*self.dof
+    theta_index = self.dh_symbols.index(sympy.Symbol('theta',real=True))
+    d_index = self.dh_symbols.index(sympy.Symbol('d',real=True))
     
     for i in range( self.dof ):
       
@@ -185,7 +194,7 @@ class Robot(object):
         for v in sympy.sympify(p).free_symbols:
           
           v=str(v)
-          if v[0] == str(Robot._joint_pos_symb):
+          if v[0] == str(_joint_symb):
             
             if len(v) > 1:
               try:
@@ -197,10 +206,21 @@ class Robot(object):
 
             else:
               temp = list(dh_parms_list[i])
-              temp[j] = sympy.sympify( temp[j] ).subs( {Robot._joint_pos_symb:self.q[i]} )
+              temp[j] = sympy.sympify( temp[j] ).subs( {_joint_symb:_joint_i_symb(i+1)} )
               dh_parms_list[i] = tuple(temp)
             
       self.dh_parms.append( dh_parms_list[i] )
+      
+      try:
+        if dh_parms_list[i][ theta_index ].has( self.q[i] ):
+          self.links_sigma[i] = 0
+          # print 'joint',i+1,'is revolute'
+      except: pass
+      try:
+        if dh_parms_list[i][ d_index ].has( self.q[il] ):
+          self.links_sigma[i] = 1
+          # print 'joint',il+1,'is prismatic'
+      except: pass
       
     return self
       
@@ -215,14 +235,14 @@ class Robot(object):
     for i in range( 0, self.dof ):
 
       if parm_order == 'khalil' or parm_order == 'tensor first': # Lxx Lxy Lxz Lyy Lyz Lzz lx ly lz m
-        parms += self.Ls[i]
+        parms += self.Le[i]
         parms += sympy.flatten(self.l[i])
         parms += [ self.m[i] ]
 
       elif parm_order == 'siciliano' or parm_order == 'mass first': # m lx ly lz Lxx Lxy Lxz Lyy Lyz Lzz
         parms += [ self.m[i] ]
         parms += sympy.flatten(self.l[i])
-        parms += self.Ls[i]
+        parms += self.Le[i]
 
       else:
           raise Exception('Robot.Parms(): dynamic parameters order \'' +parm_order+ '\' not know.')
