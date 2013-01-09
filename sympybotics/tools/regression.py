@@ -17,7 +17,7 @@ def regr_matrices( dof, parm_num, q, dq, ddq, tau, regr_func):
   tau_S = numpy.matrix( numpy.zeros( dof*sn ) ).T
 
   for i in range(sn):
-    H_S[ i*dof : i*dof+dof , : ] = numpy.array( regr_func( q[i], dq[i], ddq[i] ) ).reshape(dof,dof*10)
+    H_S[ i*dof : i*dof+dof , : ] = numpy.array( regr_func( q[i], dq[i], ddq[i] ) ).reshape(dof,parm_num)
 
   for i in range(sn):
       tau_S[ i*dof : i*dof+dof ] = numpy.mat( tau[i] ).T
