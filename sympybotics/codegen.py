@@ -17,6 +17,11 @@ import random
 import string
 import sympy
 import sys
+import re
+
+
+options = {}
+options['unroll_square'] = True
 
 
 def code_apply_func( code, func ):
@@ -30,6 +35,38 @@ def code_apply_func( code, func ):
 
 def code_subs( code, subs_dict ):
   return code_apply_func( code, lambda x: x.subs( subs_dict ) )
+
+
+def code_make_funcs_intermediate( code, symbols='ifunc_' ):
+    '''Put all sympy.Function objects into intermediate variables.
+       Not safe for composite functions!
+
+    '''
+    
+    symbols = sympy.cse_main.numbered_symbols('symbols')
+    
+    func_subs = {}
+    
+    new_code = ([],[])
+    
+    for iv,expr in code[0]:
+        for func in expr.find(sympy.Function):
+            if func not in func_subs:
+                sym = symbols.next()
+                new_code[0].append( (sym,func) )
+                func_subs[func] = sym
+        new_code[0].append( (iv, expr.subs(func_subs)) )
+    
+    for expr in code[1]:
+        for func in expr.find(sympy.Function):
+            if func not in func_subs:
+                sym = symbols.next()
+                new_code[0].append( (sym,func) )
+                func_subs[func] = sym
+        new_code[1].append( expr.subs(func_subs) )        
+
+    return new_code
+
 
 def code_cse( code, auxvarname = None ):
 
@@ -192,61 +229,60 @@ def code_make_output_single_vars(code, ivarnames=None ):
     return retcode
 
 
-def optimize_code( code, ivarnames='iv', singlevarout=False, clearcache=0, debug = True ) :
+def fully_optimize_code( code, ivarnames='iv', singlevarout=False, clearcache=0, debug = True ) :
   
   if debug: print('Optimizing code'); sys.stdout.flush()
   
-  retcode = copy.deepcopy(code)
-  
   if debug: print('code_apply_func trigsimp'); sys.stdout.flush()
-  retcode = code_apply_func( retcode, lambda x: sympy.trigsimp(x) )
+  code = code_apply_func( code, lambda x: sympy.trigsimp(x) )
   if clearcache > 1: sympy.cache.clear_cache()
   
   if debug: print('code_remove_not_compound'); sys.stdout.flush()
-  retcode = code_remove_not_compound(retcode)
+  code = code_remove_not_compound(code)
   if clearcache > 1: sympy.cache.clear_cache()
   
   if debug: print('code_remove_not_or_once_used'); sys.stdout.flush()
-  retcode = code_remove_not_or_once_used(retcode)
+  code = code_remove_not_or_once_used(code)
   if clearcache > 1: sympy.cache.clear_cache()
   
   if debug: print('code_cse'); sys.stdout.flush()
-  retcode = code_cse(retcode,'cse')
+  code = code_cse(code,'cse')
   if clearcache > 1: sympy.cache.clear_cache()
   
   #if debug: print('code_remove_not_compound'); sys.stdout.flush()
-  #retcode = code_remove_not_compound(retcode)
+  #code = code_remove_not_compound(code)
   #if clearcache > 1: sympy.cache.clear_cache()
   
   #if debug: print('code_remove_not_or_once_used'); sys.stdout.flush()
-  #retcode = code_remove_not_or_once_used(retcode)
+  #code = code_remove_not_or_once_used(code)
   #if clearcache > 1: sympy.cache.clear_cache()
   
   #if debug: print('code_cse 2'); sys.stdout.flush()
-  #retcode = code_cse(retcode,'cse2')
+  #code = code_cse(code,'cse2')
   #if clearcache > 1: sympy.cache.clear_cache()
   
   if debug: print('code_remove_not_compound'); sys.stdout.flush()
-  retcode = code_remove_not_compound(retcode)
+  code = code_remove_not_compound(code)
   if clearcache > 1: sympy.cache.clear_cache()
   
   if debug: print('code_remove_not_or_once_used'); sys.stdout.flush()
-  retcode = code_remove_not_or_once_used(retcode)
+  code = code_remove_not_or_once_used(code)
   if clearcache > 1: sympy.cache.clear_cache()
   
-  if debug: print('code_rename_ivars (unsafe)'); sys.stdout.flush()
-  retcode = code_rename_ivars_unsafe(retcode, ivarnames=ivarnames)
-  if clearcache > 1: sympy.cache.clear_cache()
+  if ivarnames:
+    if debug: print('code_rename_ivars (unsafe)'); sys.stdout.flush()
+    code = code_rename_ivars_unsafe(code, ivarnames=ivarnames)
+    if clearcache > 1: sympy.cache.clear_cache()
   
   if singlevarout:
     if debug: print('code_make_output_single_vars'); sys.stdout.flush()
-    retcode = code_make_output_single_vars(retcode)
+    code = code_make_output_single_vars(code)
     
   if clearcache: sympy.cache.clear_cache()
   
   if debug: print('Done.')
   
-  return retcode
+  return code
 
 
 def code_back_to_expressions(code):
@@ -268,7 +304,13 @@ def code_back_to_expressions(code):
     
     return exps
 
-
+def _ccode( expr, ):
+  code = sympy.ccode( expr )
+  if options['unroll_square']:
+    return re.sub(r'pow\(([^,]*), 2\)', r'((\1)*(\1))', code)
+  else:
+    return code
+  
 def code_to_string( code, outvar_name='out', indent='', realtype='', line_end='' ):
     
     codestr = ''
@@ -276,11 +318,11 @@ def code_to_string( code, outvar_name='out', indent='', realtype='', line_end=''
     if realtype: realtype += ' '
     
     for i in range( len(code[0]) ) :
-        codestr += indent + realtype + sympy.ccode( code[0][i][0] ) + ' = ' + sympy.ccode( code[0][i][1] ) + line_end + '\n'
+        codestr += indent + realtype + sympy.ccode( code[0][i][0] ) + ' = ' + _ccode( code[0][i][1] ) + line_end + '\n'
     
     codestr += '\n'
     for i in range( len(code[1]) ) :
-        codestr += indent + outvar_name + '['+str(i)+'] = ' + sympy.ccode( code[1][i] ) + line_end + '\n'
+        codestr += indent + outvar_name + '['+str(i)+'] = ' + _ccode( code[1][i] ) + line_end + '\n'
     
     return codestr
 
@@ -365,8 +407,4 @@ def code_to_func( lang, code, func_name, func_parms, subs_pairs ):
   else: raise Exception('chosen language not supported.')
   return gen_func( code, func_parms, subs_pairs, func_name, func_name+'_out' )
 
-
-def sympymatrix_to_func( lang, ivars, matrix, func_name, func_parms, subs_pairs ):
-    code = optimize_code( (ivars, sympy.flatten(matrix)), ivarnames='aux' )
-    return code_to_func( lang, code, func_name, func_parms, subs_pairs )
 

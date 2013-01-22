@@ -41,12 +41,26 @@ from . import codegen
 from . import codegen_robot
 from . import tools
 
+def _fully_optimize_code( code ):
+  codegen.fully_optimize_code( code, ivarnames='aux', clearcache=0 )
+def _fully_optimize_code_clearcache( code ):
+  codegen.fully_optimize_code( code, ivarnames='aux', clearcache=1 )
 
 class Dyn(object):
   """Robot dynamic model in code form."""
 
-  def __init__( self, rbt, usefricdyn, memoize_func=None, clearcache=0 ):
+  def __init__( self, rbt, usefricdyn, optimize='func_calls', memoize_func=None ):
 
+    optimize = optimize.lower()
+    if optimize == 'func_calls':
+      optimize_code = codegen.code_make_funcs_intermediate
+    elif optimize == 'fully':
+      optimize_code = _fully_optimize_code
+    elif optimize == 'fully_clearcache':
+        optimize_code = _fully_optimize_code_clearcache
+    else:
+      raise Exception('Optimize mode not know. Use: \'func_calls\', \'fully\' or \'fully_clearcache\'')
+    
     if memoize_func:
       memoize = memoize_func
     else:
@@ -68,13 +82,13 @@ class Dyn(object):
     if usefricdyn:
       f = memoize(dynamic_algorithms.gen_fricterm)( rbt )
 
-    self.tau_code = memoize(codegen.optimize_code)( (tau_ivs, sympy.flatten(tau)), ivarnames='aux', clearcache=clearcache )
-    self.regressor_code = memoize(codegen.optimize_code)( (regressor_ivs, sympy.flatten(regressor)), ivarnames='aux', clearcache=clearcache )
-    self.M_code = memoize(codegen.optimize_code)( (M_ivs, sympy.flatten(M)), ivarnames='aux', clearcache=clearcache )
-    self.c_code = memoize(codegen.optimize_code)( (c_ivs, sympy.flatten(c)), ivarnames='aux', clearcache=clearcache )
-    self.g_code = memoize(codegen.optimize_code)( (g_ivs, sympy.flatten(g)), ivarnames='aux', clearcache=clearcache )
+    self.tau_code = memoize(optimize_code)( (tau_ivs, sympy.flatten(tau)) )
+    self.regressor_code = memoize(optimize_code)( (regressor_ivs, sympy.flatten(regressor)) )
+    self.M_code = memoize(optimize_code)( (M_ivs, sympy.flatten(M)) )
+    self.c_code = memoize(optimize_code)( (c_ivs, sympy.flatten(c)) )
+    self.g_code = memoize(optimize_code)( (g_ivs, sympy.flatten(g)) )
     if usefricdyn:
-      self.f_code = memoize(codegen.optimize_code)( ([], sympy.flatten(f)), ivarnames='aux', clearcache=clearcache )
+      self.f_code = memoize(optimize_code)( ([], sympy.flatten(f)) )
     
     func_def_regressor = memoize(codegen_robot.dyn_code_to_func)( 'python', self.regressor_code, 'regressor_func', 2, rbt.dof  )
     global sin, cos, sign
@@ -93,7 +107,7 @@ class Dyn(object):
     self.beta = ( self.Pb.T + self.Kd * self.Pd.T ) * self.delta
     self.n_beta = len( self.beta )
 
-    self.base_regressor_code = codegen.optimize_code( ( self.regressor_code[0] , sympy.flatten( sympy.Matrix(self.regressor_code[1]).reshape(self.dof,self.n_delta) * self.Pb ) ), ivarnames='aux', clearcache=clearcache  )
+    self.base_regressor_code = optimize_code( ( self.regressor_code[0] , sympy.flatten( sympy.Matrix(self.regressor_code[1]).reshape(self.dof,self.n_delta) * self.Pb ) ) )
 
     #self.gen_member_funcs()
 
