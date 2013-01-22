@@ -192,33 +192,60 @@ def code_make_output_single_vars(code, ivarnames=None ):
     return retcode
 
 
-def optimize_code( code, ivarnames='iv', singlevarout=False, debug = True ) :
+def optimize_code( code, ivarnames='iv', singlevarout=False, clearcache=0, debug = True ) :
+  
   if debug: print('Optimizing code'); sys.stdout.flush()
+  
   retcode = copy.deepcopy(code)
+  
   if debug: print('code_apply_func trigsimp'); sys.stdout.flush()
   retcode = code_apply_func( retcode, lambda x: sympy.trigsimp(x) )
+  if clearcache > 1: sympy.cache.clear_cache()
+  
   if debug: print('code_remove_not_compound'); sys.stdout.flush()
   retcode = code_remove_not_compound(retcode)
+  if clearcache > 1: sympy.cache.clear_cache()
+  
   if debug: print('code_remove_not_or_once_used'); sys.stdout.flush()
   retcode = code_remove_not_or_once_used(retcode)
+  if clearcache > 1: sympy.cache.clear_cache()
+  
   if debug: print('code_cse'); sys.stdout.flush()
   retcode = code_cse(retcode,'cse')
+  if clearcache > 1: sympy.cache.clear_cache()
+  
   #if debug: print('code_remove_not_compound'); sys.stdout.flush()
   #retcode = code_remove_not_compound(retcode)
+  #if clearcache > 1: sympy.cache.clear_cache()
+  
   #if debug: print('code_remove_not_or_once_used'); sys.stdout.flush()
   #retcode = code_remove_not_or_once_used(retcode)
+  #if clearcache > 1: sympy.cache.clear_cache()
+  
   #if debug: print('code_cse 2'); sys.stdout.flush()
   #retcode = code_cse(retcode,'cse2')
+  #if clearcache > 1: sympy.cache.clear_cache()
+  
   if debug: print('code_remove_not_compound'); sys.stdout.flush()
   retcode = code_remove_not_compound(retcode)
+  if clearcache > 1: sympy.cache.clear_cache()
+  
   if debug: print('code_remove_not_or_once_used'); sys.stdout.flush()
   retcode = code_remove_not_or_once_used(retcode)
+  if clearcache > 1: sympy.cache.clear_cache()
+  
   if debug: print('code_rename_ivars (unsafe)'); sys.stdout.flush()
   retcode = code_rename_ivars_unsafe(retcode, ivarnames=ivarnames)
+  if clearcache > 1: sympy.cache.clear_cache()
+  
   if singlevarout:
     if debug: print('code_make_output_single_vars'); sys.stdout.flush()
     retcode = code_make_output_single_vars(retcode)
+    
+  if clearcache: sympy.cache.clear_cache()
+  
   if debug: print('Done.')
+  
   return retcode
 
 

@@ -45,7 +45,7 @@ from . import tools
 class Dyn(object):
   """Robot dynamic model in code form."""
 
-  def __init__( self, rbt, usefricdyn, memoize_func=None ):
+  def __init__( self, rbt, usefricdyn, memoize_func=None, clearcache=0 ):
 
     if memoize_func:
       memoize = memoize_func
@@ -68,13 +68,13 @@ class Dyn(object):
     if usefricdyn:
       f = memoize(dynamic_algorithms.gen_fricterm)( rbt )
 
-    self.tau_code = memoize(codegen.optimize_code)( (tau_ivs, sympy.flatten(tau)), ivarnames='aux' )
-    self.regressor_code = memoize(codegen.optimize_code)( (regressor_ivs, sympy.flatten(regressor)), ivarnames='aux' )
-    self.M_code = memoize(codegen.optimize_code)( (M_ivs, sympy.flatten(M)), ivarnames='aux' )
-    self.c_code = memoize(codegen.optimize_code)( (c_ivs, sympy.flatten(c)), ivarnames='aux' )
-    self.g_code = memoize(codegen.optimize_code)( (g_ivs, sympy.flatten(g)), ivarnames='aux' )
+    self.tau_code = memoize(codegen.optimize_code)( (tau_ivs, sympy.flatten(tau)), ivarnames='aux', clearcache=clearcache )
+    self.regressor_code = memoize(codegen.optimize_code)( (regressor_ivs, sympy.flatten(regressor)), ivarnames='aux', clearcache=clearcache )
+    self.M_code = memoize(codegen.optimize_code)( (M_ivs, sympy.flatten(M)), ivarnames='aux', clearcache=clearcache )
+    self.c_code = memoize(codegen.optimize_code)( (c_ivs, sympy.flatten(c)), ivarnames='aux', clearcache=clearcache )
+    self.g_code = memoize(codegen.optimize_code)( (g_ivs, sympy.flatten(g)), ivarnames='aux', clearcache=clearcache )
     if usefricdyn:
-      self.f_code = memoize(codegen.optimize_code)( ([], sympy.flatten(f)), ivarnames='aux' )
+      self.f_code = memoize(codegen.optimize_code)( ([], sympy.flatten(f)), ivarnames='aux', clearcache=clearcache )
     
     func_def_regressor = memoize(codegen_robot.dyn_code_to_func)( 'python', self.regressor_code, 'regressor_func', 2, rbt.dof  )
     global sin, cos, sign
@@ -93,7 +93,7 @@ class Dyn(object):
     self.beta = ( self.Pb.T + self.Kd * self.Pd.T ) * self.delta
     self.n_beta = len( self.beta )
 
-    self.base_regressor_code = codegen.optimize_code( ( self.regressor_code[0] , sympy.flatten( sympy.Matrix(self.regressor_code[1]).reshape(self.dof,self.n_delta) * self.Pb ) ) )
+    self.base_regressor_code = codegen.optimize_code( ( self.regressor_code[0] , sympy.flatten( sympy.Matrix(self.regressor_code[1]).reshape(self.dof,self.n_delta) * self.Pb ) ), ivarnames='aux', clearcache=clearcache  )
 
     #self.gen_member_funcs()
 
