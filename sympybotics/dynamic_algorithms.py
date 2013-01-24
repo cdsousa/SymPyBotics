@@ -50,43 +50,43 @@ def gen_fricterm( rbt ):
 
 def _forward_rne( rbt, m_intervar_func=None ):
   
-  Vi = list(range(0,rbt.dof+1))
-  dVi = list(range(0,rbt.dof+1))
+  V = list(range(0,rbt.dof+1))
+  dV = list(range(0,rbt.dof+1))
 
-  Vi[0] = sympy.zeros((6,1))
-  dVi[0] = - sympy.zeros((3,1)).col_join( rbt.gravity )
+  V[-1] = sympy.zeros((6,1))
+  dV[-1] = - sympy.zeros((3,1)).col_join( rbt.gravity )
 
   # Forward
-  for i in range(1,rbt.dof+1):
+  for i in range(rbt.dof):
 
-    Vi[i] =  Adj( rbt.geom.Tdhi_inv[i], Vi[i-1] )  +  rbt.geom.Si[i] * rbt.dq[i-1]
-    if m_intervar_func: Vi[i] = m_intervar_func( Vi[i] , 'V_'+str(i) )
+    V[i] =  Adj( rbt.geom.Tdh_inv[i], V[i-1] )  +  rbt.geom.S[i] * rbt.dq[i]
+    if m_intervar_func: V[i] = m_intervar_func( V[i] , 'V_'+str(i) )
 
-    dVi[i] =  rbt.geom.Si[i] * rbt.ddq[i-1]  +  Adj( rbt.geom.Tdhi_inv[i], dVi[i-1] )  +  adj(  Adj( rbt.geom.Tdhi_inv[i], Vi[i-1] ),  rbt.geom.Si[i] * rbt.dq[i-1] )
+    dV[i] =  rbt.geom.S[i] * rbt.ddq[i]  +  Adj( rbt.geom.Tdh_inv[i], dV[i-1] )  +  adj(  Adj( rbt.geom.Tdh_inv[i], V[i-1] ),  rbt.geom.S[i] * rbt.dq[i] )
 
-    if m_intervar_func: dVi[i] = m_intervar_func( dVi[i] , 'dV_'+str(i) )
+    if m_intervar_func: dV[i] = m_intervar_func( dV[i] , 'dV_'+str(i) )
 
-  return Vi, dVi
+  return V, dV
 
 
-def _backward_rne( rbt, LLi, Vi, dVi, m_intervar_func=None ):
+def _backward_rne( rbt, LL, V, dV, m_intervar_func=None ):
 
-  Tdhi_inv = copy.copy( rbt.geom.Tdhi_inv )
-  Tdhi_inv.append( sympy.eye(4) )
+  # extend Tdh_inv so that Tdh_inv[dof] return identity
+  Tdh_inv = rbt.geom.Tdh_inv + [sympy.eye(4)]
 
-  Fi = list(range(0,rbt.dof+2))
+  F = list(range(rbt.dof+1))
+  F[rbt.dof] = sympy.zeros((6,1))
+  
   tau = sympy.zeros((rbt.dof,1))
-
-  Fi[rbt.dof+1] = copy.copy( sympy.zeros((6,1)) )
-
+  
   # Backward
-  for i in range(rbt.dof,0,-1):
+  for i in range(rbt.dof-1,-1,-1):
 
-    Fi[i] =  Adjdual( Tdhi_inv[i+1], Fi[i+1] )  +  LLi[i] * dVi[i]  -  adjdual( Vi[i],  LLi[i] * Vi[i] )
+    F[i] =  Adjdual( Tdh_inv[i+1], F[i+1] )  +  LL[i] * dV[i]  -  adjdual( V[i],  LL[i] * V[i] )
 
-    if m_intervar_func: Fi[i] = m_intervar_func( Fi[i] , 'F_'+str(i) )
+    if m_intervar_func: F[i] = m_intervar_func( F[i] , 'F_'+str(i) )
 
-    tau[i-1] =  ( rbt.geom.Si[i].transpose() *  Fi[i] )[0]
+    tau[i] =  ( rbt.geom.S[i].transpose() *  F[i] )[0]
 
   return tau
 
@@ -97,16 +97,16 @@ def _backward_rne( rbt, LLi, Vi, dVi, m_intervar_func=None ):
 
 def gen_tau_rne( gen_intervars, rbt ):
       
-  LLi = list(range(0,rbt.dof+1))
+  LL = list(range(rbt.dof))
 
   for i in range( rbt.dof ):
-    LLi[i+1] = ( rbt.L[i].row_join(skew(rbt.l[i])) ).col_join( (-skew( rbt.l[i]) ).row_join(sympy.eye(3)*rbt.m[i]) )
+    LL[i] = ( rbt.L[i].row_join(skew(rbt.l[i])) ).col_join( (-skew( rbt.l[i]) ).row_join(sympy.eye(3)*rbt.m[i]) )
 
   ivars = []
   m_intervar_func = intermediate.genfunc_m_intervar( gen_intervars, ivars )
 
-  Vi, dVi = _forward_rne( rbt, m_intervar_func )
-  tau = _backward_rne( rbt, LLi, Vi, dVi, m_intervar_func )
+  V, dV = _forward_rne( rbt, m_intervar_func )
+  tau = _backward_rne( rbt, LL, V, dV, m_intervar_func )
 
   if gen_intervars:
       return ivars,tau
@@ -120,7 +120,7 @@ def gen_regressor_rne( gen_intervars, rbt, usefricdyn = True ):
   ivars = []
   m_intervar_func = intermediate.genfunc_m_intervar( gen_intervars, ivars )
 
-  Vi, dVi = _forward_rne( rbt, m_intervar_func )
+  V, dV = _forward_rne( rbt, m_intervar_func )
 
   dynparms = rbt.dynparms( usefricdyn = usefricdyn )
 
@@ -135,16 +135,16 @@ def gen_regressor_rne( gen_intervars, rbt, usefricdyn = True ):
 
     #print(parm)
 
-    LLi = list(range(0,rbt.dof+1))
+    LL = list(range(rbt.dof))
 
-    for i in range( rbt.dof ):
+    for i in range(rbt.dof):
       L = rbt.L[i].applyfunc(lambda x: 1 if x == parm else 0 )
       r = rbt.l[i].applyfunc(lambda x: 1 if x == parm else 0 )
       m = 1 if rbt.m[i] == parm else 0
       
-      LLi[i+1] = ( ( L.row_join(skew(r)) ).col_join( (-skew(r) ).row_join(sympy.eye(3)*m) ) )
+      LL[i] = ( ( L.row_join(skew(r)) ).col_join( (-skew(r) ).row_join(sympy.eye(3)*m) ) )
 
-    Y[:,p] = _backward_rne( rbt, LLi, Vi, dVi, m_intervar_func )
+    Y[:,p] = _backward_rne( rbt, LL, V, dV, m_intervar_func )
 
     if usefricdyn:
       select = copy.copy(fric_dict)
@@ -177,10 +177,10 @@ def gen_ccfterm_rne( gen_intervars, rbt ):
 
 def gen_massmatrix_rne( gen_intervars, rbt ):
 
-  LLi = list(range(0,rbt.dof+1))
+  LL = list(range(rbt.dof))
 
   for i in range( rbt.dof ):
-    LLi[i+1] = ( rbt.L[i].row_join(skew(rbt.l[i])) ).col_join( (-skew( rbt.l[i]) ).row_join(sympy.eye(3)*rbt.m[i]) )
+    LL[i] = ( rbt.L[i].row_join(skew(rbt.l[i])) ).col_join( (-skew( rbt.l[i]) ).row_join(sympy.eye(3)*rbt.m[i]) )
 
   ivars = []
   m_intervar_func = intermediate.genfunc_m_intervar( gen_intervars, ivars )
@@ -196,8 +196,8 @@ def gen_massmatrix_rne( gen_intervars, rbt ):
     rbttmp.ddq[i] = 1
     rbttmp.gen_geometric_model()
 
-    Vi, dVi = _forward_rne( rbttmp, m_intervar_func )
-    Mcoli = _backward_rne( rbttmp, LLi, Vi, dVi, m_intervar_func = m_intervar_func )
+    V, dV = _forward_rne( rbttmp, m_intervar_func )
+    Mcoli = _backward_rne( rbttmp, LL, V, dV, m_intervar_func = m_intervar_func )
 
     # It's done like this since M is symmetric:
     M[:,i] = ( M[i,:i].T ) .col_join( Mcoli[i:,:] )

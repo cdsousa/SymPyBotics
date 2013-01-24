@@ -22,8 +22,6 @@ class Geom(object):
   
   def __init__( self, robot , gen_intervars = False ):
 
-    print("Attention to indexes -- dof+1")
-
     def inverse_T(T):
       return T[0:3,0:3].transpose().row_join( - T[0:3,0:3].transpose() * T[0:3,3] ).col_join( sympy.zeros((1,3)).row_join(sympy.eye(1)) )
 
@@ -33,14 +31,10 @@ class Geom(object):
 
     (alpha , a , d , theta) = sympy.symbols('alpha,a,d,theta',real=True)
 
-    self.Tdhi = list(range(robot.dof+1))
-    self.Tdhi[0] = sympy.eye(4 )
-    self.Tdhi_inv = list(range(robot.dof+1))
-    self.Tdhi_inv[0] = sympy.eye(4 )
-    self.Rdhi = list(range(robot.dof+1))
-    self.Rdhi[0] = sympy.eye(3 )
-    self.pdhi = list(range(robot.dof+1))
-    self.pdhi[0] = sympy.zeros((3,1 ))
+    self.Tdh = list(range(robot.dof))
+    self.Tdh_inv = list(range(robot.dof))
+    self.Rdh = list(range(robot.dof))
+    self.pdh = list(range(robot.dof))
 
     dh_transfmat_inv = inverse_T(robot.dh_transfmat)
 
@@ -50,32 +44,28 @@ class Geom(object):
 
       subs_dict = dict( zip( robot.dh_symbols, robot.dh_parms[l] ) )
 
-      self.Tdhi[l+1] = robot.dh_transfmat.subs(subs_dict).subs(q_subs)
-      self.Tdhi_inv[l+1] = dh_transfmat_inv.subs(subs_dict).subs(q_subs)
-      self.Rdhi[l+1] = self.Tdhi[l+1][0 :3 ,0 :3 ]
-      self.pdhi[l+1] = self.Tdhi[l+1][0 :3 ,3 ]
+      self.Tdh[l] = robot.dh_transfmat.subs(subs_dict).subs(q_subs)
+      self.Tdh_inv[l] = dh_transfmat_inv.subs(subs_dict).subs(q_subs)
+      self.Rdh[l] = self.Tdh[l][0 :3 ,0 :3 ]
+      self.pdh[l] = self.Tdh[l][0 :3 ,3 ]
 
 
-    self.Ti = list(range(robot.dof+1 ))
-    self.Ti[0] = sympy.eye(4)
+    self.T = list(range(robot.dof))
+    
+    self.T[-1] = sympy.eye(4) # set T[-1] so that T[l-1] for l=0 is correctly assigned, T[-1] is override after
+    for l in range(robot.dof):
+      self.T[l] = m_intervar_func( self.T[l-1] *  self.Tdh[l] )
 
-    for l in range(1 , robot.dof+1 ):
+    self.R = list(range(robot.dof))
+    self.p = list(range(robot.dof))
+    self.z = list(range(robot.dof))
 
-      self.Ti[l] = m_intervar_func( self.Ti[l-1 ] *  self.Tdhi[l] )
+    for l in range(robot.dof):
+      self.R[l] = self.T[l][0 :3 ,0 :3 ]
+      self.p[l] = self.T[l][0 :3 ,3 ]
+      self.z[l] = self.R[l][0 :3 ,2 ]
 
-      #Ti[l] = Ti[l].simplify_rational()
-      #Ti[l] = trig_reduce(Ti[l])
-      #Ti[l] = Ti[l].simplify()
-
-    self.Ri = list(range(0 ,robot.dof+1))
-    self.pi = list(range(0 ,robot.dof+1))
-    self.zi = list(range(0 ,robot.dof+1))
-
-    for l in range(0 ,robot.dof+1 ):
-      self.Ri[l] = self.Ti[l][0 :3 ,0 :3 ]
-      self.pi[l] = self.Ti[l][0 :3 ,3 ]
-      self.zi[l] = self.Ri[l][0 :3 ,2 ]
-
+    #######################
     # for screw theory:
 
     cos = sympy.cos
@@ -124,11 +114,11 @@ class Geom(object):
       v = g[0:3,3]
       return w.col_join(v)
 
-    self.Si = list(range(robot.dof+1))
+    self.S = list(range(robot.dof))
     for l in range(robot.dof):
         if robot.links_sigma[l]: S = Sp
         else: S = Sr
-        self.Si[l+1] = m_intervar_func( sym_se3_unskew( S.subs( dict( zip(robot.dh_symbols, robot.dh_parms[l]) ) ) ) )
+        self.S[l] = m_intervar_func( sym_se3_unskew( S.subs( dict( zip(robot.dh_symbols, robot.dh_parms[l]) ) ) ) )
 
 
 
@@ -137,60 +127,50 @@ class Kinem(object):
 
   def __init__(self, robot , geom, gen_intervars = False ):
 
-    print("Attention to indexes -- dof+1")
-
     def sym_skew(v):
-      return sympy.Matrix( [ [     0, -v[2],  v[1] ],
-      [  v[2],     0, -v[0] ],
-      [ -v[1],  v[0],     0 ] ] )
-
+      return sympy.Matrix([[    0, -v[2],  v[1]],
+                           [ v[2],     0, -v[0]],
+                           [-v[1],  v[0],     0]])
 
     self.ivars = []
     if gen_intervars and not isinstance( gen_intervars , str ): gen_intervars = 'ivarkinm_'
     m_intervar_func = intermediate.genfunc_m_intervar( gen_intervars, self.ivars )
+    
+    # extend z and p so that z[-1] and p[-1] return values from base frame
+    z_ext = geom.z + [sympy.Matrix([0,0,1])]
+    p_ext = geom.p + [sympy.zeros(3,1)]
 
-    self.Jpi = list(range(0 ,robot.dof+1 ))
-    self.Jpi[0] = sympy.zeros((3,robot.dof))
-    for l in range(1 ,robot.dof+1 ):
-      self.Jpi[l] = sympy.zeros((3 ,robot.dof))
-      for j in range(1 ,l+1 ):
-        if robot.links_sigma[j-1]:
-          self.Jpi[l][0 :3 ,j-1 ] = m_intervar_func( geom.zi[j-1] )
+    self.Jp = list(range(robot.dof))
+    for l in range(robot.dof):
+      self.Jp[l] = sympy.zeros((3 ,robot.dof))
+      for j in range(l+1):
+        if robot.links_sigma[j]:
+          self.Jp[l][0:3, j] = m_intervar_func( z_ext[j-1] )
         else:
-          self.Jpi[l][0 :3 ,j-1 ] = m_intervar_func( geom.zi[j-1].cross( ( geom.pi[l] - geom.pi[j-1] ) ).transpose() )
+          self.Jp[l][0:3, j] = m_intervar_func( z_ext[j-1].cross( ( p_ext[l] - p_ext[j-1] ) ).transpose() )
 
-      #Jpi[i] = Jpi[i].simplify_rational()
-      #Jpi[i] = trig_reduce(Jpi[i])
-      #Jpi[i] = Jpi[i].simplify()
-
-    self.Joi = list(range(0 ,robot.dof+1 ))
-    self.Joi[0] = sympy.zeros((3,robot.dof))
-    for l in range(1 ,robot.dof+1 ):
-      self.Joi[l] = sympy.zeros((3,robot.dof))
-      for j in range(1 ,l+1 ):
-        if robot.links_sigma[j-1]:
-          self.Joi[l][0 :3 ,j-1 ] = sympy.zeros(( 3,1))
+    self.Jo = list(range(robot.dof))
+    for l in range(robot.dof):
+      self.Jo[l] = sympy.zeros((3,robot.dof))
+      for j in range(l+1):
+        if robot.links_sigma[j]:
+          self.Jo[l][0:3, j] = sympy.zeros((3,1))
         else:
-          self.Joi[l][0 :3 ,j-1 ] = m_intervar_func( geom.zi[j-1 ] )
+          self.Jo[l][0:3, j] = m_intervar_func( z_ext[j-1] )
 
-      #Joi[i] = Joi[i].simplify_rational()
-      #Joi[i] = Joi[i].simplify()
-
-
-    self.Ji = list(range(0 ,robot.dof+1 ))
-    for l in range(1 ,robot.dof+1 ):
-      self.Ji[l] = self.Jpi[l].col_join( self.Joi[l] )
+    self.J = list(range(robot.dof))
+    for l in range(robot.dof):
+      self.J[l] = self.Jp[l].col_join( self.Jo[l] )
       
 
-    self.Jcpi = list(range(0 ,robot.dof+1 ))
-    self.Jcoi = self.Joi
-    for l in range(1 ,robot.dof+1 ):
-      self.Jcpi[l] = m_intervar_func( self.Jpi[l] - sym_skew( geom.Ri[l]*sympy.Matrix(robot.l[l-1]) ) * self.Joi[l] )
+    self.Jcp = list(range(robot.dof))
+    self.Jco = self.Jo
+    for l in range(robot.dof):
+      self.Jcp[l] = m_intervar_func( self.Jp[l] - sym_skew( geom.R[l]*sympy.Matrix(robot.l[l]) ) * self.Jo[l] )
 
-
-    self.Jci = list(range(0 ,robot.dof+1 ))
-    for l in range(1 ,robot.dof+1 ):
-      self.Jci[l] = self.Jcpi[l].col_join( self.Jcoi[l] )
+    self.Jc = list(range(robot.dof))
+    for l in range(robot.dof):
+      self.Jc[l] = self.Jcp[l].col_join( self.Jco[l] )
 
   
 
