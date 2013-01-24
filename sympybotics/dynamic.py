@@ -41,30 +41,35 @@ from . import codegen
 from . import codegen_robot
 from . import tools
 
-def _fully_optimize_code( code ):
+def _fast_code_optimization( code ):
+  #code = codegen.dead_code_elimination( code )
+  return codegen.code_make_funcs_intermediate( code )
+
+def _full_code_optimization( code ):
   codegen.fully_optimize_code( code, ivarnames='aux', clearcache=0 )
-def _fully_optimize_code_clearcache( code ):
+  
+def _full_code_optimization_clearcache( code ):
   codegen.fully_optimize_code( code, ivarnames='aux', clearcache=1 )
 
 class Dyn(object):
   """Robot dynamic model in code form."""
 
-  def __init__( self, rbt, usefricdyn, optimize='func_calls', memoize_func=None ):
+  def __init__( self, rbt, usefricdyn, optimize='fast', memoize_func=None ):
 
     optimize = optimize.lower()
-    if optimize == 'func_calls':
-      optimize_code = codegen.code_make_funcs_intermediate
-    elif optimize == 'fully':
-      optimize_code = _fully_optimize_code
-    elif optimize == 'fully_clearcache':
-        optimize_code = _fully_optimize_code_clearcache
+    if optimize == 'fast':
+      optimize_code = _fast_code_optimization
+    elif optimize == 'full':
+      optimize_code = _full_code_optimization
+    elif optimize == 'full_clearcache':
+        optimize_code = _full_code_optimization_clearcache
     else:
-      raise Exception('Optimize mode not know. Use: \'func_calls\', \'fully\' or \'fully_clearcache\'')
+      raise Exception('Optimize mode not know. Use: \'fast\', \'full\' or \'full_clearcache\'')
     
     if memoize_func:
       memoize = memoize_func
     else:
-      def memoize( func, extra_deps='' ):
+      def memoize( func, extra_deps=str(usefricdyn)+str(optimize) ):
         def decorated_function( *args, **kwargs ):
           return func( *args, **kwargs )
         return decorated_function
@@ -106,26 +111,28 @@ class Dyn(object):
     
     self.beta = ( self.Pb.T + self.Kd * self.Pd.T ) * self.delta
     self.n_beta = len( self.beta )
-
-    self.base_regressor_code = optimize_code( ( self.regressor_code[0] , sympy.flatten( sympy.Matrix(self.regressor_code[1]).reshape(self.dof,self.n_delta) * self.Pb ) ) )
+    
+    self.base_regressor_code = memoize(codegen.dead_code_elimination)(( self.regressor_code[0] , sympy.flatten( sympy.Matrix(self.regressor_code[1]).reshape(self.dof,self.n_delta) * self.Pb ) ))
 
     #self.gen_member_funcs()
 
 
+
   def _gen_member_funcs(self):
-    """Generate object member functions for dinamic terms calculation."""
-    
+    """Generate object member functions for dinamic terms calculation."""    
     
     tau_str = codegen_robot.dyn_code_to_func( 'python', self.tau_code, 'tau', 2, self.dof, self.delta )
     regressor_str = codegen_robot.dyn_code_to_func( 'python', self.regressor_code, 'regressor', 2, self.dof )
+    base_regressor_str = codegen_robot.dyn_code_to_func( 'python', self.base_regressor_code, 'base_regressor', 2, self.dof )
     M_str = codegen_robot.dyn_code_to_func( 'python', self.M_code, 'M', 0, self.dof, self.delta )
-    g_str = codegen_robot.dyn_code_to_func( 'python', self.c_code, 'c', 1, self.dof, self.delta )
-    c_str = codegen_robot.dyn_code_to_func( 'python', self.g_code, 'g', 0, self.dof, self.delta )
+    c_str = codegen_robot.dyn_code_to_func( 'python', self.c_code, 'c', 1, self.dof, self.delta )
+    g_str = codegen_robot.dyn_code_to_func( 'python', self.g_code, 'g', 0, self.dof, self.delta )
     if hasattr(self, 'f_code'):
       f_str = codegen_robot.dyn_code_to_func( 'python', self.f_code, 'f', 1, self.dof, self.delta )
 
     funcs = [ ('tau', self.dof, 1),
               ('regressor', self.dof, self.n_delta),
+              ('base_regressor', self.dof, self.n_beta),
               ('M', self.dof, self.dof),
               ('c', self.dof, 1),
               ('g', self.dof, 1)
@@ -147,6 +154,7 @@ class Dyn(object):
 
     self.tau = tau
     self.regressor = regressor
+    self.base_regressor = base_regressor
     self.M = M
     self.c = c
     self.g = g

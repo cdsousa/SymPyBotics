@@ -177,6 +177,33 @@ def code_remove_not_or_once_used( code ):
     return retcode
 
 
+def dead_code_elimination( code ):
+    
+    ivs = []
+    
+    n = len(code[0])
+    
+    for i in range(len(code[0])-1,-1,-1):
+        s = code[0][i][0]
+        
+        used = False
+        
+        for _,e in ivs:
+            if sympy.sympify(e).has(s):
+              used = True
+              break
+        if not used:
+            for e in code[1]:
+              if sympy.sympify(e).has(s):
+                used = True
+                break
+        
+        if used:
+          ivs.append(code[0][i])
+          
+    return list(reversed(ivs)), code[1][:]
+
+
 def code_rename_ivars_unsafe(code, ivarnames ):
     
   retcode = copy.deepcopy(code)
