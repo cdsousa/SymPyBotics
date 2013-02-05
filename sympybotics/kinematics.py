@@ -18,9 +18,13 @@ _id = lambda x: x
 class Kinematics(object):
   """Robot symbolic Jacobians."""
 
-  def __init__(self, robot , geom, ifunc=None ):
+  def __init__(self, robotdef , geom, ifunc=None ):
     
     if not ifunc: ifunc = _id
+    
+    self.rbtdef = robotdef
+    self.geom = geom
+    self.dof = robotdef.dof
     
     def sym_skew(v):
       return sympy.Matrix([[    0, -v[2],  v[1]],
@@ -31,36 +35,36 @@ class Kinematics(object):
     z_ext = geom.z + [sympy.Matrix([0,0,1])]
     p_ext = geom.p + [sympy.zeros(3,1)]
 
-    self.Jp = list(range(robot.dof))
-    for l in range(robot.dof):
-      self.Jp[l] = sympy.zeros((3 ,robot.dof))
+    self.Jp = list(range(robotdef.dof))
+    for l in range(robotdef.dof):
+      self.Jp[l] = sympy.zeros((3 ,robotdef.dof))
       for j in range(l+1):
-        if robot.links_sigma[j]:
+        if robotdef.links_sigma[j]:
           self.Jp[l][0:3, j] = ifunc( z_ext[j-1] )
         else:
           self.Jp[l][0:3, j] = ifunc( z_ext[j-1].cross( ( p_ext[l] - p_ext[j-1] ) ).transpose() )
 
-    self.Jo = list(range(robot.dof))
-    for l in range(robot.dof):
-      self.Jo[l] = sympy.zeros((3,robot.dof))
+    self.Jo = list(range(robotdef.dof))
+    for l in range(robotdef.dof):
+      self.Jo[l] = sympy.zeros((3,robotdef.dof))
       for j in range(l+1):
-        if robot.links_sigma[j]:
+        if robotdef.links_sigma[j]:
           self.Jo[l][0:3, j] = sympy.zeros((3,1))
         else:
           self.Jo[l][0:3, j] = ifunc( z_ext[j-1] )
 
-    self.J = list(range(robot.dof))
-    for l in range(robot.dof):
+    self.J = list(range(robotdef.dof))
+    for l in range(robotdef.dof):
       self.J[l] = self.Jp[l].col_join( self.Jo[l] )
       
 
-    self.Jcp = list(range(robot.dof))
+    self.Jcp = list(range(robotdef.dof))
     self.Jco = self.Jo
-    for l in range(robot.dof):
-      self.Jcp[l] = ifunc( self.Jp[l] - sym_skew( geom.R[l]*sympy.Matrix(robot.l[l]) ) * self.Jo[l] )
+    for l in range(robotdef.dof):
+      self.Jcp[l] = ifunc( self.Jp[l] - sym_skew( geom.R[l]*sympy.Matrix(robotdef.l[l]) ) * self.Jo[l] )
 
-    self.Jc = list(range(robot.dof))
-    for l in range(robot.dof):
+    self.Jc = list(range(robotdef.dof))
+    for l in range(robotdef.dof):
       self.Jc[l] = self.Jcp[l].col_join( self.Jco[l] )
 
   

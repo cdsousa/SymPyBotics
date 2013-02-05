@@ -13,15 +13,15 @@
 
 import sympy
 
-from . import codegen
-from . import geomkinem
+from . import code
+from . import geometry, kinematics
 
 
 
 def gen_geometric_kinematic_code( robot ):
 
-  geom = geomkinem.Geom(robot,True)
-  kinem = geomkinem.Kinem(robot,geom,True)
+  geom = geometry.Geometry(robot,True)
+  kinem = kinematics.Kinematics(robot,geom,True)
 
   all_p = []
   for p in geom.pi:

@@ -42,8 +42,8 @@ _joint_symb = _new_sym('q')
 def _joint_i_symb(i):
   return _new_sym( 'q'+str(i) )
 
-class Robot(object):
-  """Class that generates and holds robot geometric and kinematic information, and dynamic parameter symbols."""
+class Robotdef(object):
+  """Class that generates and holds robot definitions and symbols."""
 
   q = _joint_symb
 
@@ -62,7 +62,7 @@ class Robot(object):
   
   def __init__(self,name,dh_parms,shortname=None):
     """
-    Create Robot instance with data structures for robot geometry and symbols of robot dynamics.
+    Create Robotdef instance with data structures for robot geometry and symbols of robot dynamics.
     """
     
     self.dof = len(dh_parms)
@@ -73,8 +73,8 @@ class Robot(object):
     else :
       self.shortname = ''.join(c for c in name.replace(' ','_').replace('.','_') if c.isalnum() or c == '_')
     
-    self.dh_symbols = Robot._default_dh_symbols
-    self.dh_transfmat = Robot._default_dh_transfmat
+    self.dh_symbols = Robotdef._default_dh_symbols
+    self.dh_transfmat = Robotdef._default_dh_transfmat
     
     self.dyn_parms_order = 'Khalil'
 
@@ -95,11 +95,11 @@ class Robot(object):
       object.__setattr__(self, 'I', _elementslist_to_tensorlist(value))
   
   def __repr__(self) :
-    return 'Robot instance: ' + self.name
+    return 'Robotdef instance: ' + self.name
 
   
   def _gen_symbols( self ) :
-    """Generate robot dynamic symbols and populates Robot instance with them. (internal function)"""
+    """Generate robot dynamic symbols and populates Robotdef instance with them. (internal function)"""
     
     subs_dict = collections.OrderedDict
     
@@ -172,11 +172,11 @@ class Robot(object):
     
   def _set_dh_parms( self, dh_parms_list ):
     """
-    Define the Robot geometry using Denavit-Hartenberg notation.
+    Define the Robotdef geometry using Denavit-Hartenberg notation.
     """
     
     if len( dh_parms_list ) != self.dof:
-      raise Exception('Robot.set_geometry(): provided number of links differ from robot dof (%d vs %d).' % ( len( dh_parms_list ), self.dof) )
+      raise Exception('Robotdef.set_geometry(): provided number of links differ from robot dof (%d vs %d).' % ( len( dh_parms_list ), self.dof) )
       
     self.dh_parms = []
 
@@ -187,7 +187,7 @@ class Robot(object):
     for i in range( self.dof ):
       
       if len( dh_parms_list[i] ) != 4:
-        raise Exception('Robot.set_dh_parms: wrong number of Denavit-Hartenberg parameters (must be 4 per link).' )
+        raise Exception('Robotdef.set_dh_parms: wrong number of Denavit-Hartenberg parameters (must be 4 per link).' )
 
       for j,p in enumerate(dh_parms_list[i]):
 
@@ -202,7 +202,7 @@ class Robot(object):
               except:
                 num = 1
               if num <= 0 or num > self.dof:
-                raise Exception("Robot.set_dh_parms: Joint position symbol \'%s\' out of robot joint range (from 1 to %d)!" % (v,self.dof))
+                raise Exception("Robotdef.set_dh_parms: Joint position symbol \'%s\' out of robot joint range (from 1 to %d)!" % (v,self.dof))
 
             else:
               temp = list(dh_parms_list[i])
@@ -226,7 +226,7 @@ class Robot(object):
       
 
   def dynparms( self, parm_order = None, usefricdyn=False ):
-    """Return list of Robot symbolic dynamic parameters."""
+    """Return list of Robotdef symbolic dynamic parameters."""
 
     if not parm_order: parm_order = self.dyn_parms_order
     parm_order = parm_order.lower()
@@ -245,7 +245,7 @@ class Robot(object):
         parms += self.Le[i]
 
       else:
-          raise Exception('Robot.Parms(): dynamic parameters order \'' +parm_order+ '\' not know.')
+          raise Exception('Robotdef.Parms(): dynamic parameters order \'' +parm_order+ '\' not know.')
 
       if usefricdyn: parms += [ self.fv[i], self.fc[i] ]
 

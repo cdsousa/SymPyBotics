@@ -10,35 +10,13 @@
 #                  http://www.gnu.org/licenses/
 ###############################################################################
 
-##### For both Python 2 and Python 3 compatiblility:
-import sys
-if sys.version_info.major >= 3:
-    def compatible_exec(source, g=None,l=None):
-      if g:
-        if l:
-          exec(source, g, l)
-        else:
-          exec(source, g)
-      else:
-        exec(source)
-else:
-    eval(compile("""\
-def compatible_exec(source, g=None,l=None):
-      if g:
-        if l:
-          exec source in g, l
-        else:
-          exec source in g
-      else:
-        exec source
-""",
-    "<exec_function>", "exec"))
 
 import copy
 import sympy
 import numpy
 
 from . import geometry
+from . import code
 
 
 def _skew(v):
@@ -68,30 +46,30 @@ def _adjdual(g,h):
 _id = lambda x: x
 
 
-def _forward_rne(rbt, geom, ifunc=None):
+def _forward_rne(rbtdef, geom, ifunc=None):
   '''RNE forward pass.'''
   
   if not ifunc: ifunc = _id
   
-  V = list(range(0,rbt.dof+1))
-  dV = list(range(0,rbt.dof+1))
+  V = list(range(0,rbtdef.dof+1))
+  dV = list(range(0,rbtdef.dof+1))
 
   V[-1] = sympy.zeros((6,1))
-  dV[-1] = - sympy.zeros((3,1)).col_join( rbt.gravity )
+  dV[-1] = - sympy.zeros((3,1)).col_join( rbtdef.gravity )
 
   # Forward
-  for i in range(rbt.dof):
+  for i in range(rbtdef.dof):
 
-    V[i] =  _Adj( geom.Tdh_inv[i], V[i-1] )  +  geom.S[i] * rbt.dq[i]
+    V[i] =  _Adj( geom.Tdh_inv[i], V[i-1] )  +  geom.S[i] * rbtdef.dq[i]
     V[i] = ifunc( V[i] )
 
-    dV[i] =  geom.S[i] * rbt.ddq[i]  +  _Adj( geom.Tdh_inv[i], dV[i-1] )  +  _adj(  _Adj( geom.Tdh_inv[i], V[i-1] ),  geom.S[i] * rbt.dq[i] )
+    dV[i] =  geom.S[i] * rbtdef.ddq[i]  +  _Adj( geom.Tdh_inv[i], dV[i-1] )  +  _adj(  _Adj( geom.Tdh_inv[i], V[i-1] ),  geom.S[i] * rbtdef.dq[i] )
     dV[i] = ifunc( dV[i] )
 
   return V, dV
 
 
-def _backward_rne(rbt, geom, Llm, V, dV, ifunc=None):
+def _backward_rne(rbtdef, geom, Llm, V, dV, ifunc=None):
   '''RNE backward pass.'''
   
   if not ifunc: ifunc = _id
@@ -99,13 +77,13 @@ def _backward_rne(rbt, geom, Llm, V, dV, ifunc=None):
   # extend Tdh_inv so that Tdh_inv[dof] return identity
   Tdh_inv = geom.Tdh_inv + [sympy.eye(4)]
 
-  F = list(range(rbt.dof+1))
-  F[rbt.dof] = sympy.zeros((6,1))
+  F = list(range(rbtdef.dof+1))
+  F[rbtdef.dof] = sympy.zeros((6,1))
   
-  tau = sympy.zeros((rbt.dof,1))
+  tau = sympy.zeros((rbtdef.dof,1))
   
   # Backward
-  for i in range(rbt.dof-1,-1,-1):
+  for i in range(rbtdef.dof-1,-1,-1):
 
     F[i] =  _Adjdual( Tdh_inv[i+1], F[i+1] )  +  Llm[i] * dV[i]  -  _adjdual( V[i],  Llm[i] * V[i] )
 
@@ -118,51 +96,51 @@ def _backward_rne(rbt, geom, Llm, V, dV, ifunc=None):
 
 
 
-def gen_tau_rne(rbt, geom, ifunc=None):
+def _gen_tau_rne(rbtdef, geom, ifunc=None):
   '''Generate joints generic forces/torques equation.'''
   
   if not ifunc: ifunc = _id
       
-  Llm = list(range(rbt.dof))
+  Llm = list(range(rbtdef.dof))
 
-  for i in range( rbt.dof ):
-    Llm[i] = (rbt.L[i].row_join(_skew(rbt.l[i])) ).col_join( (-_skew( rbt.l[i]) ).row_join(sympy.eye(3)*rbt.m[i]))
+  for i in range( rbtdef.dof ):
+    Llm[i] = (rbtdef.L[i].row_join(_skew(rbtdef.l[i])) ).col_join( (-_skew( rbtdef.l[i]) ).row_join(sympy.eye(3)*rbtdef.m[i]))
 
-  V, dV = _forward_rne( rbt, geom, ifunc )
-  tau = _backward_rne( rbt, geom, Llm, V, dV, ifunc )
+  V, dV = _forward_rne( rbtdef, geom, ifunc )
+  tau = _backward_rne( rbtdef, geom, Llm, V, dV, ifunc )
 
   return tau
 
 
 
-def gen_regressor_rne(rbt, geom, usefricdyn=False, ifunc=None):
+def _gen_regressor_rne(rbtdef, geom, usefricdyn=False, ifunc=None):
   '''Generate regression matrix.'''
   
   if not ifunc: ifunc = _id
 
-  V, dV = _forward_rne( rbt, geom, ifunc )
+  V, dV = _forward_rne( rbtdef, geom, ifunc )
 
-  dynparms = rbt.dynparms( usefricdyn = usefricdyn )
+  dynparms = rbtdef.dynparms( usefricdyn = usefricdyn )
 
-  Y = sympy.zeros( ( rbt.dof, len(dynparms) ) )
+  Y = sympy.zeros( ( rbtdef.dof, len(dynparms) ) )
   
   if usefricdyn:
-    fric = gen_fricterm(rbt)
-    fric_dict = dict( zip( rbt.fc, [0]*len(rbt.fc) ) )
-    fric_dict.update( dict( zip( rbt.fv, [0]*len(rbt.fv) ) ) )
+    fric = _gen_fricterm(rbtdef)
+    fric_dict = dict( zip( rbtdef.fc, [0]*len(rbtdef.fc) ) )
+    fric_dict.update( dict( zip( rbtdef.fv, [0]*len(rbtdef.fv) ) ) )
 
   for p,parm in enumerate(dynparms):
 
-    Llm = list(range(rbt.dof))
+    Llm = list(range(rbtdef.dof))
 
-    for i in range(rbt.dof):
-      L = rbt.L[i].applyfunc(lambda x: 1 if x == parm else 0 )
-      r = rbt.l[i].applyfunc(lambda x: 1 if x == parm else 0 )
-      m = 1 if rbt.m[i] == parm else 0
+    for i in range(rbtdef.dof):
+      L = rbtdef.L[i].applyfunc(lambda x: 1 if x == parm else 0 )
+      r = rbtdef.l[i].applyfunc(lambda x: 1 if x == parm else 0 )
+      m = 1 if rbtdef.m[i] == parm else 0
       
       Llm[i] = ( ( L.row_join(_skew(r)) ).col_join( (-_skew(r) ).row_join(sympy.eye(3)*m) ) )
 
-    Y[:,p] = _backward_rne( rbt, geom, Llm, V, dV, ifunc )
+    Y[:,p] = _backward_rne( rbtdef, geom, Llm, V, dV, ifunc )
 
     if usefricdyn:
       select = copy.copy(fric_dict)
@@ -173,50 +151,50 @@ def gen_regressor_rne(rbt, geom, usefricdyn=False, ifunc=None):
 
 
 
-def gen_gravterm_rne(rbt, geom, ifunc=None):
+def _gen_gravterm_rne(rbtdef, geom, ifunc=None):
   '''Generate gravity force equation.'''
   if not ifunc: ifunc = _id
-  rbttmp = copy.deepcopy(rbt)
-  rbttmp.dq = sympy.zeros((rbttmp.dof,1))
-  rbttmp.ddq = sympy.zeros((rbttmp.dof,1))
-  geomtmp = geometry.Geometry(rbttmp)
-  return gen_tau_rne(rbttmp, geomtmp, ifunc)
+  rbtdeftmp = copy.deepcopy(rbtdef)
+  rbtdeftmp.dq = sympy.zeros((rbtdeftmp.dof,1))
+  rbtdeftmp.ddq = sympy.zeros((rbtdeftmp.dof,1))
+  geomtmp = geometry.Geometry(rbtdeftmp)
+  return _gen_tau_rne(rbtdeftmp, geomtmp, ifunc)
 
 
-def gen_ccfterm_rne(rbt, geom, ifunc=None):
+def _gen_ccfterm_rne(rbtdef, geom, ifunc=None):
   '''Generate Coriolis and centriptal forces equation.'''
   if not ifunc: ifunc = _id
-  rbttmp = copy.deepcopy(rbt)
-  rbttmp.gravity = sympy.zeros((3,1))
-  rbttmp.ddq = sympy.zeros((rbttmp.dof,1))
-  geomtmp = geometry.Geometry(rbttmp)
-  return gen_tau_rne(rbttmp, geomtmp, ifunc)
+  rbtdeftmp = copy.deepcopy(rbtdef)
+  rbtdeftmp.gravity = sympy.zeros((3,1))
+  rbtdeftmp.ddq = sympy.zeros((rbtdeftmp.dof,1))
+  geomtmp = geometry.Geometry(rbtdeftmp)
+  return _gen_tau_rne(rbtdeftmp, geomtmp, ifunc)
 
 
 
-def gen_massmatrix_rne(rbt, geom, ifunc=None):
+def _gen_massmatrix_rne(rbtdef, geom, ifunc=None):
   '''Generate mass matrix.'''
   
   if not ifunc: ifunc = _id
 
-  Llm = list(range(rbt.dof))
+  Llm = list(range(rbtdef.dof))
 
-  for i in range( rbt.dof ):
-    Llm[i] = ( rbt.L[i].row_join(_skew(rbt.l[i])) ).col_join( (-_skew( rbt.l[i]) ).row_join(sympy.eye(3)*rbt.m[i]) )
+  for i in range( rbtdef.dof ):
+    Llm[i] = ( rbtdef.L[i].row_join(_skew(rbtdef.l[i])) ).col_join( (-_skew( rbtdef.l[i]) ).row_join(sympy.eye(3)*rbtdef.m[i]) )
 
-  M = sympy.zeros((rbt.dof,rbt.dof))
+  M = sympy.zeros((rbtdef.dof,rbtdef.dof))
 
-  rbttmp = copy.deepcopy( rbt )
-  rbttmp.gravity = sympy.zeros((3,1))
-  rbttmp.dq = sympy.zeros((rbttmp.dof,1))
+  rbtdeftmp = copy.deepcopy( rbtdef )
+  rbtdeftmp.gravity = sympy.zeros((3,1))
+  rbtdeftmp.dq = sympy.zeros((rbtdeftmp.dof,1))
 
   for i in range( M.rows ):
-    rbttmp.ddq = sympy.zeros((rbttmp.dof,1))
-    rbttmp.ddq[i] = 1
-    geomtmp = geometry.Geometry(rbttmp)
+    rbtdeftmp.ddq = sympy.zeros((rbtdeftmp.dof,1))
+    rbtdeftmp.ddq[i] = 1
+    geomtmp = geometry.Geometry(rbtdeftmp)
 
-    V, dV = _forward_rne( rbttmp, geomtmp, ifunc )
-    Mcoli = _backward_rne( rbttmp, geomtmp, Llm, V, dV, ifunc )
+    V, dV = _forward_rne( rbtdeftmp, geomtmp, ifunc )
+    Mcoli = _backward_rne( rbtdeftmp, geomtmp, Llm, V, dV, ifunc )
 
     # It's done like this since M is symmetric:
     M[:,i] = ( M[i,:i].T ) .col_join( Mcoli[i:,:] )
@@ -225,17 +203,17 @@ def gen_massmatrix_rne(rbt, geom, ifunc=None):
 
 
 
-def gen_fricterm(rbt, ifunc=None):
+def _gen_fricterm(rbtdef, ifunc=None):
   '''Generate friction forces (simple Coulomb and viscouse model).'''
   if not ifunc: ifunc = _id
-  fric = sympy.zeros((rbt.dof,1))
-  for i in range( rbt.dof ):
-    fric[i] = ifunc( rbt.fv[i] * rbt.dq[i] + rbt.fc[i] * sympy.sign(rbt.dq[i]) )
+  fric = sympy.zeros((rbtdef.dof,1))
+  for i in range( rbtdef.dof ):
+    fric[i] = ifunc( rbtdef.fv[i] * rbtdef.dq[i] + rbtdef.fc[i] * sympy.sign(rbtdef.dq[i]) )
   return fric
 
 
 
-def find_dyn_parm_deps( dof, parm_num, regressor_func ):
+def _find_dyn_parm_deps( dof, parm_num, regressor_func ):
   '''Find dynamic parameter dependencies (i.e., regressor column dependencies).'''
 
   samples=10000
@@ -275,43 +253,77 @@ def find_dyn_parm_deps( dof, parm_num, regressor_func ):
 
 
 
+
 class Dynamics(object):
-  """Robot dynamic model in code form."""
-
-  def __init__(self, rbt, geom, usefricdyn, ifunc=None):
+  
+  def __init__(self, rbtdef, geom, usefricdyn):
     
+    self.rbtdef = rbtdef
+    self.geom = geom
+    self.dof = rbtdef.dof
     self.usefricdyn = usefricdyn
+    
+    self.dynparms = sympy.Matrix( rbtdef.dynparms(usefricdyn=self.usefricdyn) )
+    self.n_dynparms =  len( self.dynparms )
+    
+    self.delta = self.dynparms
+    self.n_delta = self.n_dynparms
+    
+  def gen_tau(self, ifunc=None):
+    self.tau = _gen_tau_rne(self.rbtdef, self.geom, ifunc)
+    
+  def gen_gravterm(self, ifunc=None):
+    self.g = _gen_gravterm_rne(self.rbtdef, self.geom, ifunc)
+    
+  def gen_ccfterm(self, ifunc=None):
+    self.c = _gen_ccfterm_rne(self.rbtdef, self.geom, ifunc)
+    
+  def gen_massmatrix(self, ifunc=None):
+    self.M = _gen_massmatrix_rne(self.rbtdef, self.geom, ifunc)
 
-    self.delta = sympy.Matrix( rbt.dynparms(usefricdyn=self.usefricdyn) )
-    self.n_delta =  len( self.delta )
-
-    self.tau = gen_tau_rne(rbt, geom, ifunc)
-    self.regressor = gen_regressor_rne(rbt, geom, usefricdyn=self.usefricdyn, ifunc=ifunc)
-    self.M = gen_massmatrix_rne(rbt, geom, ifunc)
-    self.c = gen_ccfterm_rne(rbt, geom, ifunc)
-    self.g = gen_gravterm_rne(rbt, geom, ifunc)
+  def gen_regressor(self, ifunc=None):
+    self.regressor = _gen_regressor_rne(self.rbtdef, self.geom, self.usefricdyn, ifunc)
+    self.H = self.regressor
+    
+  def gen_fricterm(self, ifunc=None):
     if self.usefricdyn:
-      self.f = gen_fricterm(rbt, ifunc)
-      
-      
-  #def find_base_parameters(self, rbt):
-      
-    #func_def_regressor = codegen_robot.dyn_code_to_func( 'python', self.tau.regressor_code, 'regressor_func', 2, rbt.dof  )
-    #global sin, cos, sign
-    #sin = numpy.sin
-    #cos = numpy.cos
-    #sign = numpy.sign
-    #compatible_exec(func_def_regressor,globals())
-    
-    #Pb, Pd, Kd = find_dyn_parm_deps( rbt.dof, self.n_delta, regressor_func )
-    
-    #self.Pb = sympy.Matrix(Pb).applyfunc(lambda x: x.nsimplify())
-    #self.Pd = sympy.Matrix(Pd).applyfunc(lambda x: x.nsimplify())
-    #self.Kd = sympy.Matrix(Kd).applyfunc(lambda x: x.nsimplify())
+      self.f = _gen_fricterm(self.rbtdef, ifunc)
+    else:
+      self.f = sympy.zeros(self.dof,1)
 
-    #self.base_idxs = ( numpy.matrix([[i for i in range(self.n_delta)]]) * numpy.matrix(Pb) ).astype(float).astype(int).tolist()[0]
+  def gen_base_parms(self, regressor_func=None):
+
+    if regressor_func == None:
+      se = code.subexprs.Subexprs(mode='deep')
+      regressor = _gen_regressor_rne(self.rbtdef, self.geom, usefricdyn=self.usefricdyn, ifunc=se.collect)
+      func_def_regressor = code.generation.code_to_func('python', (se.subexprs, sympy.flatten(regressor)), 'local_regressor_func', ['q','dq','ddq'], [('q'+str(i+1), 'q['+str(i)+']') for i in range(self.dof)])
+      global sin, cos, sign
+      sin = numpy.sin
+      cos = numpy.cos
+      sign = numpy.sign
+      exec(func_def_regressor)
+      regressor_func = local_regressor_func
     
-    #self.beta = ( self.Pb.T + self.Kd * self.Pd.T ) * self.delta
-    #self.n_beta = len( self.beta )
+    Pb, Pd, Kd = _find_dyn_parm_deps( self.dof, self.n_delta, regressor_func )
+
+    self.Pb = sympy.Matrix(Pb).applyfunc(lambda x: x.nsimplify())
+    self.Pd = sympy.Matrix(Pd).applyfunc(lambda x: x.nsimplify())
+    self.Kd = sympy.Matrix(Kd).applyfunc(lambda x: x.nsimplify())
+
+    self.base_idxs = ( numpy.matrix([[i for i in range(self.n_delta)]]) * numpy.matrix(Pb) ).astype(float).astype(int).tolist()[0]
+
+    self.baseparms = ( self.Pb.T + self.Kd * self.Pd.T ) * self.delta
+    self.n_base = len( self.baseparms )
+    self.base_regressor = self.regressor * self.Pb
     
-    #self.base_regressor = self.regressor * self.Pb
+    self.beta = self.baseparms
+    self.n_beta = self.n_base
+    self.Hb = self.base_regressor
+    
+  def gen_all(self, ifunc=None):
+    self.gen_tau(ifunc)
+    self.gen_gravterm(ifunc)
+    self.gen_ccfterm(ifunc)
+    self.gen_massmatrix(ifunc)
+    self.gen_regressor(ifunc)
+    self.gen_base_parms(ifunc)

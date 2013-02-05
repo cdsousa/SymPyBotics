@@ -13,36 +13,34 @@
 import sympy
 
 
-#def is_compound(expr):
-#  return not (expr.is_Atom or (-expr).is_Atom)
 
-class SymCode(object):
+class Subexprs(object):
        
-  def __init__(self, mode):
+  def __init__(self, mode='deep', ivars_name='tmp'):
     
-    self.symbols = sympy.utilities.iterables.numbered_symbols('a', start=0, real=True)
-    self.code = list()
-    if mode == 'simple':
-      self._collect_func = self._collect_conditional
-    elif mode == 'deep':
+    self.symbols = sympy.utilities.iterables.numbered_symbols(ivars_name, start=0, real=True)
+    self.subexprs = list()
+    if mode == 'deep':
       self._collect_func = self._collect_singleops
+    elif mode == 'simple':
+      self._collect_func = self._collect_nonatom
     
     
-  def _collect_conditional(self, expr):
+  def _collect_nonatom(self, expr):
     if expr.is_Atom:
       return expr
     else:
       ivar = next(self.symbols)
-      self.code.append((ivar,expr))
+      self.subexprs.append((ivar,expr))
       return ivar
     
     
   def _add_if_new(self, expr):
-    for (ivar,iexpr) in self.code:
+    for (ivar,iexpr) in self.subexprs:
       if expr == iexpr:
         return ivar
     new_ivar = next(self.symbols)
-    self.code.append((new_ivar, expr))
+    self.subexprs.append((new_ivar, expr))
     return new_ivar
   
   

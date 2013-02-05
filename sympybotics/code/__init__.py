@@ -12,14 +12,8 @@
 
 """Symbolic manipulation of robot geometric, kinematic and dynamic models."""
 
+from . import subexprs
+from . import optimization
+from . import generation
 
-from .robotdef import Robotdef
-from . import geometry
-from . import kinematics
-from . import dynamics
-from . import code
-from . import robotcodegen
-from .robotmodel import RobotAllSymb, RobotDynCode
-#from . import tools
-
-__all__ = ['Robotdef', 'geometry', 'kinematics', 'dynamics', 'code', 'robotcodegen', 'RobotAllSymb', 'RobotDynCode']
+__all__ = ['subexprs', 'optimization', 'generation']
