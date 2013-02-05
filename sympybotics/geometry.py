@@ -3,7 +3,7 @@
 ###############################################################################
 #  SymPyBotics: Symbolic Robotics Toolbox using Python and SymPy
 #
-#      Copyright (C) 2012 Cristóvão Sousa <crisjss@gmail.com>
+#      Copyright (C) 2012, 2013 Cristóvão Sousa <crisjss@gmail.com>
 #
 #  Distributed under the terms of the GNU General Public License (GPL),
 #  version 2 or any later version.  The full text of the GPL is available at:
@@ -13,21 +13,19 @@
 
 import sympy
 
-from . import intermediate
 from .robot import _joint_i_symb
 
+_id = lambda x: x
 
-class Geom(object):
+class Geometry(object):
   """Robot symbolic geometric transformations."""
   
-  def __init__( self, robot , gen_intervars = False ):
+  def __init__( self, robot , ifunc=None):
+    
+    if not ifunc: ifunc = _id
 
     def inverse_T(T):
       return T[0:3,0:3].transpose().row_join( - T[0:3,0:3].transpose() * T[0:3,3] ).col_join( sympy.zeros((1,3)).row_join(sympy.eye(1)) )
-
-    self.ivars = []
-    if gen_intervars and not isinstance( gen_intervars , str ): gen_intervars = 'ivargeom_'
-    m_intervar_func = intermediate.genfunc_m_intervar( gen_intervars, self.ivars )
 
     (alpha , a , d , theta) = sympy.symbols('alpha,a,d,theta',real=True)
 
@@ -54,7 +52,7 @@ class Geom(object):
     
     self.T[-1] = sympy.eye(4) # set T[-1] so that T[l-1] for l=0 is correctly assigned, T[-1] is override after
     for l in range(robot.dof):
-      self.T[l] = m_intervar_func( self.T[l-1] *  self.Tdh[l] )
+      self.T[l] = ifunc( self.T[l-1] *  self.Tdh[l] )
 
     self.R = list(range(robot.dof))
     self.p = list(range(robot.dof))
@@ -118,5 +116,5 @@ class Geom(object):
     for l in range(robot.dof):
         if robot.links_sigma[l]: S = Sp
         else: S = Sr
-        self.S[l] = m_intervar_func( sym_se3_unskew( S.subs( dict( zip(robot.dh_symbols, robot.dh_parms[l]) ) ) ) )
+        self.S[l] = ifunc( sym_se3_unskew( S.subs( dict( zip(robot.dh_symbols, robot.dh_parms[l]) ) ) ) )
 

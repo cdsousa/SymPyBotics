@@ -3,7 +3,7 @@
 ###############################################################################
 #  SymPyBotics: Symbolic Robotics Toolbox using Python and SymPy
 #
-#      Copyright (C) 2012 Cristóvão Sousa <crisjss@gmail.com>
+#      Copyright (C) 2012, 2013 Cristóvão Sousa <crisjss@gmail.com>
 #
 #  Distributed under the terms of the GNU General Public License (GPL),
 #  version 2 or any later version.  The full text of the GPL is available at:
@@ -250,21 +250,5 @@ class Robot(object):
       if usefricdyn: parms += [ self.fv[i], self.fc[i] ]
 
     return parms
-
-
-  
-  def gen_geometric_model(self):
-    """Generate symbolic geometric model member object."""
-    from . import geomkinem
-    self.geom = geomkinem.Geom(self)
-    return self
-
-
-  def gen_kinematic_model( self ):
-    """Generate symbolic kinematic model member object."""
-    from . import geomkinem
-    self.kinem = geomkinem.Kinem(self,self.geom)
-    return self
-
 
 
