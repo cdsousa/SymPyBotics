@@ -68,7 +68,7 @@ def _adjdual(g,h):
 _id = lambda x: x
 
 
-def _forward_rne(rbt, ifunc=None):
+def _forward_rne(rbt, geom, ifunc=None):
   '''RNE forward pass.'''
   
   if not ifunc: ifunc = _id
@@ -82,22 +82,22 @@ def _forward_rne(rbt, ifunc=None):
   # Forward
   for i in range(rbt.dof):
 
-    V[i] =  _Adj( rbt.geom.Tdh_inv[i], V[i-1] )  +  rbt.geom.S[i] * rbt.dq[i]
+    V[i] =  _Adj( geom.Tdh_inv[i], V[i-1] )  +  geom.S[i] * rbt.dq[i]
     V[i] = ifunc( V[i] )
 
-    dV[i] =  rbt.geom.S[i] * rbt.ddq[i]  +  _Adj( rbt.geom.Tdh_inv[i], dV[i-1] )  +  _adj(  _Adj( rbt.geom.Tdh_inv[i], V[i-1] ),  rbt.geom.S[i] * rbt.dq[i] )
+    dV[i] =  geom.S[i] * rbt.ddq[i]  +  _Adj( geom.Tdh_inv[i], dV[i-1] )  +  _adj(  _Adj( geom.Tdh_inv[i], V[i-1] ),  geom.S[i] * rbt.dq[i] )
     dV[i] = ifunc( dV[i] )
 
   return V, dV
 
 
-def _backward_rne(rbt, Llm, V, dV, ifunc=None):
+def _backward_rne(rbt, geom, Llm, V, dV, ifunc=None):
   '''RNE backward pass.'''
   
   if not ifunc: ifunc = _id
 
   # extend Tdh_inv so that Tdh_inv[dof] return identity
-  Tdh_inv = rbt.geom.Tdh_inv + [sympy.eye(4)]
+  Tdh_inv = geom.Tdh_inv + [sympy.eye(4)]
 
   F = list(range(rbt.dof+1))
   F[rbt.dof] = sympy.zeros((6,1))
@@ -111,14 +111,14 @@ def _backward_rne(rbt, Llm, V, dV, ifunc=None):
 
     F[i] = ifunc(F[i])
 
-    tau[i] =  ifunc(( rbt.geom.S[i].transpose() *  F[i] )[0])
+    tau[i] =  ifunc(( geom.S[i].transpose() *  F[i] )[0])
 
   return tau
 
 
 
 
-def gen_tau_rne(rbt, ifunc=None):
+def gen_tau_rne(rbt, geom, ifunc=None):
   '''Generate joints generic forces/torques equation.'''
   
   if not ifunc: ifunc = _id
@@ -128,19 +128,19 @@ def gen_tau_rne(rbt, ifunc=None):
   for i in range( rbt.dof ):
     Llm[i] = (rbt.L[i].row_join(_skew(rbt.l[i])) ).col_join( (-_skew( rbt.l[i]) ).row_join(sympy.eye(3)*rbt.m[i]))
 
-  V, dV = _forward_rne( rbt, ifunc )
-  tau = _backward_rne( rbt, Llm, V, dV, ifunc )
+  V, dV = _forward_rne( rbt, geom, ifunc )
+  tau = _backward_rne( rbt, geom, Llm, V, dV, ifunc )
 
   return tau
 
 
 
-def gen_regressor_rne(rbt, usefricdyn=False, ifunc=None):
+def gen_regressor_rne(rbt, geom, usefricdyn=False, ifunc=None):
   '''Generate regression matrix.'''
   
   if not ifunc: ifunc = _id
 
-  V, dV = _forward_rne( rbt, ifunc )
+  V, dV = _forward_rne( rbt, geom, ifunc )
 
   dynparms = rbt.dynparms( usefricdyn = usefricdyn )
 
@@ -162,7 +162,7 @@ def gen_regressor_rne(rbt, usefricdyn=False, ifunc=None):
       
       Llm[i] = ( ( L.row_join(_skew(r)) ).col_join( (-_skew(r) ).row_join(sympy.eye(3)*m) ) )
 
-    Y[:,p] = _backward_rne( rbt, Llm, V, dV, ifunc )
+    Y[:,p] = _backward_rne( rbt, geom, Llm, V, dV, ifunc )
 
     if usefricdyn:
       select = copy.copy(fric_dict)
@@ -173,28 +173,28 @@ def gen_regressor_rne(rbt, usefricdyn=False, ifunc=None):
 
 
 
-def gen_gravterm_rne(rbt, ifunc=None):
+def gen_gravterm_rne(rbt, geom, ifunc=None):
   '''Generate gravity force equation.'''
   if not ifunc: ifunc = _id
   rbttmp = copy.deepcopy(rbt)
   rbttmp.dq = sympy.zeros((rbttmp.dof,1))
   rbttmp.ddq = sympy.zeros((rbttmp.dof,1))
-  rbttmp.geom = geometry.Geometry(rbttmp)
-  return gen_tau_rne(rbttmp, ifunc)
+  geomtmp = geometry.Geometry(rbttmp)
+  return gen_tau_rne(rbttmp, geomtmp, ifunc)
 
 
-def gen_ccfterm_rne(rbt, ifunc=None):
+def gen_ccfterm_rne(rbt, geom, ifunc=None):
   '''Generate Coriolis and centriptal forces equation.'''
   if not ifunc: ifunc = _id
   rbttmp = copy.deepcopy(rbt)
   rbttmp.gravity = sympy.zeros((3,1))
   rbttmp.ddq = sympy.zeros((rbttmp.dof,1))
-  rbttmp.geom = geometry.Geometry(rbttmp)
-  return gen_tau_rne(rbttmp, ifunc)
+  geomtmp = geometry.Geometry(rbttmp)
+  return gen_tau_rne(rbttmp, geomtmp, ifunc)
 
 
 
-def gen_massmatrix_rne(rbt, ifunc=None):
+def gen_massmatrix_rne(rbt, geom, ifunc=None):
   '''Generate mass matrix.'''
   
   if not ifunc: ifunc = _id
@@ -213,10 +213,10 @@ def gen_massmatrix_rne(rbt, ifunc=None):
   for i in range( M.rows ):
     rbttmp.ddq = sympy.zeros((rbttmp.dof,1))
     rbttmp.ddq[i] = 1
-    rbttmp.geom = geometry.Geometry(rbttmp)
+    geomtmp = geometry.Geometry(rbttmp)
 
-    V, dV = _forward_rne( rbttmp, ifunc )
-    Mcoli = _backward_rne( rbttmp, Llm, V, dV, ifunc )
+    V, dV = _forward_rne( rbttmp, geomtmp, ifunc )
+    Mcoli = _backward_rne( rbttmp, geomtmp, Llm, V, dV, ifunc )
 
     # It's done like this since M is symmetric:
     M[:,i] = ( M[i,:i].T ) .col_join( Mcoli[i:,:] )
@@ -278,18 +278,18 @@ def find_dyn_parm_deps( dof, parm_num, regressor_func ):
 class Dynamics(object):
   """Robot dynamic model in code form."""
 
-  def __init__(self, rbt, usefricdyn, ifunc=None):
+  def __init__(self, rbt, geom, usefricdyn, ifunc=None):
     
     self.usefricdyn = usefricdyn
 
     self.delta = sympy.Matrix( rbt.dynparms(usefricdyn=self.usefricdyn) )
     self.n_delta =  len( self.delta )
 
-    self.tau = gen_tau_rne(rbt, ifunc)
-    self.regressor = gen_regressor_rne(rbt, usefricdyn=self.usefricdyn, ifunc=ifunc)
-    self.M = gen_massmatrix_rne(rbt, ifunc)
-    self.c = gen_ccfterm_rne(rbt, ifunc)
-    self.g = gen_gravterm_rne(rbt, ifunc)
+    self.tau = gen_tau_rne(rbt, geom, ifunc)
+    self.regressor = gen_regressor_rne(rbt, geom, usefricdyn=self.usefricdyn, ifunc=ifunc)
+    self.M = gen_massmatrix_rne(rbt, geom, ifunc)
+    self.c = gen_ccfterm_rne(rbt, geom, ifunc)
+    self.g = gen_gravterm_rne(rbt, geom, ifunc)
     if self.usefricdyn:
       self.f = gen_fricterm(rbt, ifunc)
       
