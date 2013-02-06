@@ -10,12 +10,17 @@
 #                  http://www.gnu.org/licenses/
 ###############################################################################
 
+import sys
 import sympy
 
 from . import geometry
 from . import kinematics
 from . import dynamics
-from . import code
+from . import symcode
+
+def _fprint(x):
+  print(x)
+  sys.stdout.flush()
 
 class RobotAllSymb(object):
   """Robot geometric, kinematic, and dynamic models in single symbolic expressions."""
@@ -47,24 +52,55 @@ class RobotDynCode(object):
     
     self.dyn = dynamics.Dynamics(self.rbtdef, self.geom, self.usefricdyn)
     
-    tau_se = code.subexprs.Subexprs()
-    g_se = code.subexprs.Subexprs()
-    c_se = code.subexprs.Subexprs()
-    M_se = code.subexprs.Subexprs()
-    H_se = code.subexprs.Subexprs()
+    subexprsmode = 'simple'
     
+    _fprint('generating tau code')
+    tau_se = symcode.subexprs.Subexprs(subexprsmode)
     self.dyn.gen_tau(tau_se.collect)
-    self.dyn.gen_gravterm(g_se.collect)
-    self.dyn.gen_ccfterm(c_se.collect)
-    self.dyn.gen_massmatrix(M_se.collect)
-    self.dyn.gen_regressor(H_se.collect)
-    self.dyn.gen_base_parms()
-        
     self.tau_code  = (tau_se.subexprs, self.dyn.tau)
-    self.g_code  = (g_se.subexprs, self.dyn.g)
-    self.c_code  = (c_se.subexprs, self.dyn.c)
-    self.M_code  = (M_se.subexprs, self.dyn.M)
-    self.H_code  = (H_se.subexprs, self.dyn.H)
-    self.Hb_code  = (H_se.subexprs, self.dyn.Hb)
     
+    _fprint('generating gravity term code')
+    g_se = symcode.subexprs.Subexprs(subexprsmode)
+    self.dyn.gen_gravterm(g_se.collect)
+    self.g_code  = (g_se.subexprs, self.dyn.g)
+    
+    _fprint('generating Coriolisterm code')
+    c_se = symcode.subexprs.Subexprs(subexprsmode)
+    self.dyn.gen_ccfterm(c_se.collect)
+    self.c_code  = (c_se.subexprs, self.dyn.c)
+    
+    _fprint('generating mass matrix code')
+    M_se = symcode.subexprs.Subexprs(subexprsmode)
+    self.dyn.gen_massmatrix(M_se.collect)
+    self.M_code  = (M_se.subexprs, self.dyn.M)
+    
+    _fprint('generating regressor matrix code')
+    H_se = symcode.subexprs.Subexprs(subexprsmode)
+    self.dyn.gen_regressor(H_se.collect)
+    self.H_code  = (H_se.subexprs, self.dyn.H)
+    
+    self._codes = ['tau_code', 'g_code', 'c_code', 'M_code', 'H_code']
+    
+    
+  def gen_base_parms(self):
+    
+    _fprint('generating base parameters and regressor code')
+    self.dyn.gen_base_parms()
+    self.Hb_code  = (self.H_code[0], self.dyn.Hb)
+    
+    self._codes.append('Hb_code')
+
+
+  def optimize_code(self):
+    
+    def optimize( code ):
+      code = symcode.optimization.optim_dce_sup(code)
+      code = symcode.optimization.optim_cp(code)
+      return code
+      
+    for codename in self._codes:
+      _fprint('optimizing %s'%codename)
+      oldcode = getattr(self,codename)
+      newcode = optimize(oldcode)
+      setattr(self,codename,newcode)
     

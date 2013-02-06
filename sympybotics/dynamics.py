@@ -16,7 +16,7 @@ import sympy
 import numpy
 
 from . import geometry
-from . import code
+from . import symcode
 
 
 def _skew(v):
@@ -294,9 +294,9 @@ class Dynamics(object):
   def gen_base_parms(self, regressor_func=None):
 
     if regressor_func == None:
-      se = code.subexprs.Subexprs(mode='deep')
+      se = symcode.subexprs.Subexprs(mode='deep')
       regressor = _gen_regressor_rne(self.rbtdef, self.geom, usefricdyn=self.usefricdyn, ifunc=se.collect)
-      func_def_regressor = code.generation.code_to_func('python', (se.subexprs, sympy.flatten(regressor)), 'local_regressor_func', ['q','dq','ddq'], [('q'+str(i+1), 'q['+str(i)+']') for i in range(self.dof)])
+      func_def_regressor = symcode.generation.code_to_func('python', (se.subexprs, sympy.flatten(regressor)), 'local_regressor_func', ['q','dq','ddq'], [('q'+str(i+1), 'q['+str(i)+']') for i in range(self.dof)])
       global sin, cos, sign
       sin = numpy.sin
       cos = numpy.cos

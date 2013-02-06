@@ -13,7 +13,7 @@
 
 import sympy
 
-from . import code
+from . import symcode
 from . import geometry, kinematics
 
 

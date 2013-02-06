@@ -13,13 +13,13 @@
 """Symbolic manipulation of robot geometric, kinematic and dynamic models."""
 
 
-from .robotdef import Robotdef
+from .robotdef import RobotDef
 from . import geometry
 from . import kinematics
 from . import dynamics
-from . import code
+from . import symcode
 from . import robotcodegen
 from .robotmodel import RobotAllSymb, RobotDynCode
 #from . import tools
 
-__all__ = ['Robotdef', 'geometry', 'kinematics', 'dynamics', 'code', 'robotcodegen', 'RobotAllSymb', 'RobotDynCode']
+__all__ = ['Robotdef', 'geometry', 'kinematics', 'dynamics', 'symcode', 'robotcodegen', 'RobotAllSymb', 'RobotDynCode']

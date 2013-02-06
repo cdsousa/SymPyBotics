@@ -220,35 +220,38 @@ def make_output_single_vars(code, ivarnames=None ):
 
     return retcode
 
+def _fprint(x):
+  print(x)
+  sys.stdout.flush()
 
 def fully_optimize_code( code, ivarnames=None, singlevarout=False, clearcache=0, debug = True ) :
   
-  if debug: print('Optimizing code'); sys.stdout.flush()
+  if debug: _fprint('Optimizing code')
   
 
-  if debug: print('dead code elimination and single use propagation'); sys.stdout.flush()
+  if debug: _fprint('dead code elimination and single use propagation')
   code = optim_dce_sup(code)
   if clearcache > 1: sympy.cache.clear_cache()
   
-  if debug: print('common sub-expressions elimination'); sys.stdout.flush()
+  if debug: _fprint('common sub-expressions elimination')
   code = optim_cse(code,'cse')
   if clearcache > 1: sympy.cache.clear_cache()
   
-  if debug: print('copy propagation'); sys.stdout.flush()
+  if debug: _fprint('copy propagation')
   code = optim_cp(code)
   if clearcache > 1: sympy.cache.clear_cache()
   
-  if debug: print('dead code elimination and single use propagation'); sys.stdout.flush()
+  if debug: _fprint('dead code elimination and single use propagation')
   code = optim_dce_sup(code)
   if clearcache > 1: sympy.cache.clear_cache()
   
   if ivarnames:
-    if debug: print('code_rename_ivars (unsafe)'); sys.stdout.flush()
+    if debug: _fprint('code_rename_ivars (unsafe)')
     code = rename_ivars_unsafe(code, ivarnames=ivarnames)
     if clearcache > 1: sympy.cache.clear_cache()
   
   if singlevarout:
-    if debug: print('code_make_output_single_vars'); sys.stdout.flush()
+    if debug: _fprint('code_make_output_single_vars')
     code = make_output_single_vars(code)
     
   if clearcache: sympy.cache.clear_cache()
