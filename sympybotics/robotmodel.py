@@ -29,7 +29,7 @@ class RobotAllSymb(object):
 class RobotDynCode(object):
   """Robot dynamic model in code form."""
   
-  def __init__(self, rbtdef, codecollectmode='simple'):
+  def __init__(self, rbtdef, codecollectmode='unique_ops'):
     
     self.rbtdef = rbtdef
     self.dof = rbtdef.dof

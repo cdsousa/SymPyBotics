@@ -5,17 +5,21 @@ import sympy
 
 class Subexprs(object):
        
-  def __init__(self, mode='deep', ivars_name='tmp'):
+  def __init__(self, mode='unique_ops', ivars_name='tmp'):
     
     self.symbols = sympy.utilities.iterables.numbered_symbols(ivars_name, start=0, real=True)
     self.subexprs = list()
-    if mode == 'deep':
-      self._collect_func = self._collect_singleops
-    elif mode == 'simple':
-      self._collect_func = self._collect_nonatom
+    self.exprs_dict = dict()
+    
+    if mode == 'unique_ops':
+      self._collect_func = self._collect_uniqueops
+    elif mode == 'whole_exprs':
+      self._collect_func = self._collect_exprs
+    else:
+      raise Exception("No '%s' sub-expressions collection mode known."%mode)
     
     
-  def _collect_nonatom(self, expr):
+  def _collect_exprs(self, expr):
     if expr.is_Atom:
       return expr
     else:
@@ -24,23 +28,24 @@ class Subexprs(object):
       return ivar
     
     
-  def _add_if_new(self, expr):
-    for (ivar,iexpr) in self.subexprs:
-      if expr == iexpr:
-        return ivar
-    new_ivar = next(self.symbols)
-    self.subexprs.append((new_ivar, expr))
-    return new_ivar
+  def _collect_op(self, expr):
+    if expr in self.exprs_dict:
+      return self.exprs_dict[expr]
+    else:
+      new_ivar = next(self.symbols)
+      self.subexprs.append((new_ivar, expr))
+      self.exprs_dict[expr] = new_ivar
+      return new_ivar
   
   
-  def _collect_singleops(self, expr):
+  def _collect_uniqueops(self, expr):
     if expr.is_Atom:
         return expr
     else:
         new_args = []
         for arg in expr.args:
-          new_args.append( self._collect_singleops(arg) )
-        return self._add_if_new(type(expr)(*new_args))
+          new_args.append( self._collect_uniqueops(arg) )
+        return self._collect_op(type(expr)(*new_args))
     
     
   def collect(self, exprs):
