@@ -25,32 +25,30 @@ def _fprint(x):
 class RobotAllSymb(object):
   """Robot geometric, kinematic, and dynamic models in single symbolic expressions."""
 
-  def __init__(self, rbtdef, usefricdyn=False):
+  def __init__(self, rbtdef):
     
     self.rbtdef = rbtdef
     self.dof = rbtdef.dof
-    self.usefricdyn = usefricdyn
     
     self.geom = geometry.Geometry(self.rbtdef)
     self.kin = geometry.Geometry(self.rbtdef, self.geom)
     
-    self.dyn = dynamics.Dynamics(self.rbtdef, self.geom, self.usefricdyn)
+    self.dyn = dynamics.Dynamics(self.rbtdef, self.geom)
     self.dyn.gen_all()
 
   
 class RobotDynCode(object):
   """Robot dynamic model in code form."""
   
-  def __init__(self, rbtdef, usefricdyn=False):
+  def __init__(self, rbtdef):
     
     self.rbtdef = rbtdef
     self.dof = rbtdef.dof
-    self.usefricdyn = usefricdyn
     
     self.geom = geometry.Geometry(self.rbtdef)
     self.kin = kinematics.Kinematics(self.rbtdef, self.geom)
     
-    self.dyn = dynamics.Dynamics(self.rbtdef, self.geom, self.usefricdyn)
+    self.dyn = dynamics.Dynamics(self.rbtdef, self.geom)
     
     subexprsmode = 'simple'
     
@@ -81,26 +79,46 @@ class RobotDynCode(object):
     
     self._codes = ['tau_code', 'g_code', 'c_code', 'M_code', 'H_code']
     
+    if self.rbtdef.frictionmodel != None:    
+      _fprint('generating friction term code')
+      f_se = symcode.subexprs.Subexprs(subexprsmode)
+      self.dyn.gen_fricterm(f_se.collect)
+      self.f_code  = (f_se.subexprs, self.dyn.H)
+      self._codes.append('f_code')
+      
+    _fprint('done')
     
-  def gen_base_parms(self):
     
-    _fprint('generating base parameters and regressor code')
-    self.dyn.gen_base_parms()
+  def calc_base_parms(self):
+    
+    _fprint('calculating base parameters and regressor code')
+    self.dyn.calc_base_parms()
     self.Hb_code  = (self.H_code[0], self.dyn.Hb)
     
     self._codes.append('Hb_code')
-
-
-  def optimize_code(self):
     
-    def optimize( code ):
-      code = symcode.optimization.optim_dce_sup(code)
-      code = symcode.optimization.optim_cp(code)
-      return code
+    _fprint('done')
+
+
+  def optimize_code(self, mode='light'):
+    
+    if mode == 'light':
+      def optimize( code ):
+        code = symcode.optimization.optim_dce_sup(code)
+        code = symcode.optimization.optim_cp(code)
+        return code
+    elif mode == 'heavy':
+      def optimize( code ):
+        code = symcode.optimization.fully_optimize_code(code)
+        return code
+    else:
+      raise Exception("No '%s' optimization mode known."%mode)
       
     for codename in self._codes:
       _fprint('optimizing %s'%codename)
       oldcode = getattr(self,codename)
       newcode = optimize(oldcode)
       setattr(self,codename,newcode)
+    
+    _fprint('done')
     

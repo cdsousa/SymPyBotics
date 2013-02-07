@@ -77,6 +77,8 @@ class RobotDef(object):
     self.dh_transfmat = RobotDef._default_dh_transfmat
     
     self.dyn_parms_order = 'Khalil'
+    
+    self.frictionmodel = None # can be None or 'simple'
 
     #g_a = sympy.symbols('g_a',real=True)
     g_a = 9.81
@@ -225,7 +227,7 @@ class RobotDef(object):
     return self
       
 
-  def dynparms( self, parm_order = None, usefricdyn=False ):
+  def dynparms( self, parm_order = None ):
     """Return list of RobotDef symbolic dynamic parameters."""
 
     if not parm_order: parm_order = self.dyn_parms_order
@@ -247,7 +249,7 @@ class RobotDef(object):
       else:
           raise Exception('RobotDef.Parms(): dynamic parameters order \'' +parm_order+ '\' not know.')
 
-      if usefricdyn: parms += [ self.fv[i], self.fc[i] ]
+      if self.frictionmodel == 'simple': parms += [ self.fv[i], self.fc[i] ]
 
     return parms
 

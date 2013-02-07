@@ -113,18 +113,18 @@ def _gen_tau_rne(rbtdef, geom, ifunc=None):
 
 
 
-def _gen_regressor_rne(rbtdef, geom, usefricdyn=False, ifunc=None):
+def _gen_regressor_rne(rbtdef, geom, ifunc=None):
   '''Generate regression matrix.'''
   
   if not ifunc: ifunc = _id
 
   V, dV = _forward_rne( rbtdef, geom, ifunc )
 
-  dynparms = rbtdef.dynparms( usefricdyn = usefricdyn )
+  dynparms = rbtdef.dynparms()
 
   Y = sympy.zeros( ( rbtdef.dof, len(dynparms) ) )
   
-  if usefricdyn:
+  if rbtdef.frictionmodel == 'simple':
     fric = _gen_fricterm(rbtdef)
     fric_dict = dict( zip( rbtdef.fc, [0]*len(rbtdef.fc) ) )
     fric_dict.update( dict( zip( rbtdef.fv, [0]*len(rbtdef.fv) ) ) )
@@ -142,7 +142,7 @@ def _gen_regressor_rne(rbtdef, geom, usefricdyn=False, ifunc=None):
 
     Y[:,p] = _backward_rne( rbtdef, geom, Llm, V, dV, ifunc )
 
-    if usefricdyn:
+    if rbtdef.frictionmodel == 'simple':
       select = copy.copy(fric_dict)
       select.update( { parm: 1 } )
       Y[:,p] = ifunc( Y[:,p] + fric.subs(select) )
@@ -256,14 +256,13 @@ def _find_dyn_parm_deps( dof, parm_num, regressor_func ):
 
 class Dynamics(object):
   
-  def __init__(self, rbtdef, geom, usefricdyn):
+  def __init__(self, rbtdef, geom):
     
     self.rbtdef = rbtdef
     self.geom = geom
     self.dof = rbtdef.dof
-    self.usefricdyn = usefricdyn
     
-    self.dynparms = sympy.Matrix( rbtdef.dynparms(usefricdyn=self.usefricdyn) )
+    self.dynparms = sympy.Matrix( rbtdef.dynparms() )
     self.n_dynparms =  len( self.dynparms )
     
     self.delta = self.dynparms
@@ -282,20 +281,20 @@ class Dynamics(object):
     self.M = _gen_massmatrix_rne(self.rbtdef, self.geom, ifunc)
 
   def gen_regressor(self, ifunc=None):
-    self.regressor = _gen_regressor_rne(self.rbtdef, self.geom, self.usefricdyn, ifunc)
+    self.regressor = _gen_regressor_rne(self.rbtdef, self.geom, ifunc)
     self.H = self.regressor
     
   def gen_fricterm(self, ifunc=None):
-    if self.usefricdyn:
+    if self.rbtdef.frictionmodel == 'simple':
       self.f = _gen_fricterm(self.rbtdef, ifunc)
     else:
       self.f = sympy.zeros(self.dof,1)
 
-  def gen_base_parms(self, regressor_func=None):
+  def calc_base_parms(self, regressor_func=None):
 
     if regressor_func == None:
       se = symcode.subexprs.Subexprs(mode='deep')
-      regressor = _gen_regressor_rne(self.rbtdef, self.geom, usefricdyn=self.usefricdyn, ifunc=se.collect)
+      regressor = _gen_regressor_rne(self.rbtdef, self.geom, ifunc=se.collect)
       func_def_regressor = symcode.generation.code_to_func('python', (se.subexprs, sympy.flatten(regressor)), 'local_regressor_func', ['q','dq','ddq'], [('q'+str(i+1), 'q['+str(i)+']') for i in range(self.dof)])
       global sin, cos, sign
       sin = numpy.sin
@@ -326,4 +325,4 @@ class Dynamics(object):
     self.gen_ccfterm(ifunc)
     self.gen_massmatrix(ifunc)
     self.gen_regressor(ifunc)
-    self.gen_base_parms(ifunc)
+    self.calc_base_parms()
