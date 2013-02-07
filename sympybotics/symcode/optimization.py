@@ -64,8 +64,13 @@ def optim_cse( code, auxvarname = 'cse' ):
     """Performe 'common sub-expressions elimination' optimization on code."""
 
     code_in = code
+    
+    if isinstance(code_in[1],sympy.Matrix):
+      code_in_exprs = sympy.flatten(code_in[1])
+    else:
+      code_in_exprs = code_in[1]
 
-    codecse = sympy.cse( sympy.sympify( [i[1] for i in code_in[0]] + code_in[1] ), \
+    codecse = sympy.cse( sympy.sympify( [i[1] for i in code_in[0]] + code_in_exprs ), \
                          sympy.cse_main.numbered_symbols(auxvarname) )
     
     auxv1_num = len(code_in[0])
@@ -91,8 +96,13 @@ def optim_cse( code, auxvarname = 'cse' ):
         codemerge.append( a1 )
     for acse in Acse:
         codemerge.append( acse )
+        
+    if isinstance(code_in[1],sympy.Matrix):
+      code_out_exprs = sympy.Matrix(codecse[1][auxv1_num:]).reshape(*code_in[1].shape)
+    else:
+      code_out_exprs = codecse[1][auxv1_num:]
     
-    retcode = ( codemerge , codecse[1][auxv1_num:] )
+    retcode = ( codemerge , code_out_exprs )
     
     return retcode
 
@@ -226,37 +236,34 @@ def _fprint(x):
 
 def fully_optimize_code( code, ivarnames=None, singlevarout=False, clearcache=0, debug = True ) :
   
-  if debug: _fprint('Optimizing code')
-  
-
-  if debug: _fprint('dead code elimination and single use propagation')
+  if debug: _fprint(' dead code elimination and single use propagation')
   code = optim_dce_sup(code)
   if clearcache > 1: sympy.cache.clear_cache()
   
-  if debug: _fprint('common sub-expressions elimination')
+  if debug: _fprint(' common sub-expressions elimination')
   code = optim_cse(code,'cse')
   if clearcache > 1: sympy.cache.clear_cache()
   
-  if debug: _fprint('copy propagation')
+  if debug: _fprint(' copy propagation')
   code = optim_cp(code)
   if clearcache > 1: sympy.cache.clear_cache()
   
-  if debug: _fprint('dead code elimination and single use propagation')
+  if debug: _fprint(' dead code elimination and single use propagation')
   code = optim_dce_sup(code)
   if clearcache > 1: sympy.cache.clear_cache()
   
   if ivarnames:
-    if debug: _fprint('code_rename_ivars (unsafe)')
+    if debug: _fprint(' code_rename_ivars (unsafe)')
     code = rename_ivars_unsafe(code, ivarnames=ivarnames)
     if clearcache > 1: sympy.cache.clear_cache()
   
   if singlevarout:
-    if debug: _fprint('code_make_output_single_vars')
+    if debug: _fprint(' code_make_output_single_vars')
     code = make_output_single_vars(code)
     
   if clearcache: sympy.cache.clear_cache()
   
-  if debug: print('Done.')
+  if debug: print(' done')
   
   return code
 

@@ -40,7 +40,7 @@ class RobotAllSymb(object):
 class RobotDynCode(object):
   """Robot dynamic model in code form."""
   
-  def __init__(self, rbtdef):
+  def __init__(self, rbtdef, codecollectmode='simple'):
     
     self.rbtdef = rbtdef
     self.dof = rbtdef.dof
@@ -50,30 +50,28 @@ class RobotDynCode(object):
     
     self.dyn = dynamics.Dynamics(self.rbtdef, self.geom)
     
-    subexprsmode = 'simple'
-    
     _fprint('generating tau code')
-    tau_se = symcode.subexprs.Subexprs(subexprsmode)
+    tau_se = symcode.subexprs.Subexprs(codecollectmode)
     self.dyn.gen_tau(tau_se.collect)
     self.tau_code  = (tau_se.subexprs, self.dyn.tau)
     
     _fprint('generating gravity term code')
-    g_se = symcode.subexprs.Subexprs(subexprsmode)
+    g_se = symcode.subexprs.Subexprs(codecollectmode)
     self.dyn.gen_gravterm(g_se.collect)
     self.g_code  = (g_se.subexprs, self.dyn.g)
     
-    _fprint('generating Coriolisterm code')
-    c_se = symcode.subexprs.Subexprs(subexprsmode)
+    _fprint('generating coriolis term code')
+    c_se = symcode.subexprs.Subexprs(codecollectmode)
     self.dyn.gen_ccfterm(c_se.collect)
     self.c_code  = (c_se.subexprs, self.dyn.c)
     
     _fprint('generating mass matrix code')
-    M_se = symcode.subexprs.Subexprs(subexprsmode)
+    M_se = symcode.subexprs.Subexprs(codecollectmode)
     self.dyn.gen_massmatrix(M_se.collect)
     self.M_code  = (M_se.subexprs, self.dyn.M)
     
     _fprint('generating regressor matrix code')
-    H_se = symcode.subexprs.Subexprs(subexprsmode)
+    H_se = symcode.subexprs.Subexprs(codecollectmode)
     self.dyn.gen_regressor(H_se.collect)
     self.H_code  = (H_se.subexprs, self.dyn.H)
     
@@ -81,7 +79,7 @@ class RobotDynCode(object):
     
     if self.rbtdef.frictionmodel != None:    
       _fprint('generating friction term code')
-      f_se = symcode.subexprs.Subexprs(subexprsmode)
+      f_se = symcode.subexprs.Subexprs(codecollectmode)
       self.dyn.gen_fricterm(f_se.collect)
       self.f_code  = (f_se.subexprs, self.dyn.H)
       self._codes.append('f_code')
