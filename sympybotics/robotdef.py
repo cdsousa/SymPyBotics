@@ -1,17 +1,5 @@
-# -*- coding: utf-8 -*-
-
-###############################################################################
-#  SymPyBotics: Symbolic Robotics Toolbox using Python and SymPy
-#
-#      Copyright (C) 2012, 2013 Cristóvão Sousa <crisjss@gmail.com>
-#
-#  Distributed under the terms of the GNU General Public License (GPL),
-#  version 2 or any later version.  The full text of the GPL is available at:
-#                  http://www.gnu.org/licenses/
-###############################################################################
 
 
-import collections
 import sympy
 
 
@@ -102,9 +90,7 @@ class RobotDef(object):
   
   def _gen_symbols( self ) :
     """Generate robot dynamic symbols and populates RobotDef instance with them. (internal function)"""
-    
-    subs_dict = collections.OrderedDict
-    
+     
 
     dof = self.dof
     
@@ -132,10 +118,10 @@ class RobotDef(object):
     I_funcof_L = self.I_funcof_L = list( range( self.dof ) )
     L_funcof_I = self.L_funcof_I = list( range( self.dof ) )
     
-    dict_I2Lexp = self.dict_I2Lexp = subs_dict()
-    dict_L2Iexp = self.dict_L2Iexp = subs_dict()
-    dict_l2mr = self.dict_l2mr = subs_dict()
-    dict_r2lm = self.dict_r2lm = subs_dict()
+    dict_I2Lexp = self.dict_I2Lexp = dict()
+    dict_L2Iexp = self.dict_L2Iexp = dict()
+    dict_l2mr = self.dict_l2mr = dict()
+    dict_r2lm = self.dict_r2lm = dict()
     
     for i in range( dof ):
       
