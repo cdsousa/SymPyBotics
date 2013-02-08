@@ -77,15 +77,24 @@ class RobotDef(object):
 
     self._set_dh_parms(dh_parms)
   
-  def __setattr__(self, name, value):
-    object.__setattr__(self, name, value)
-    if name == 'Le':
-      object.__setattr__(self, 'L', _elementslist_to_tensorlist(value))
-    elif name == 'Ie':
-      object.__setattr__(self, 'I', _elementslist_to_tensorlist(value))
   
   def __repr__(self) :
     return 'RobotDef instance: ' + self.name
+  
+  
+  @property
+  def Le(self): return self._Le
+  @Le.setter
+  def Le(self, Le):
+    self._Le = Le
+    self.L = _elementslist_to_tensorlist(self._Le)
+  
+  @property
+  def Ie(self): return self._Ie
+  @Ie.setter
+  def Ie(self, Ie):
+    self._Ie = Ie
+    self.I = _elementslist_to_tensorlist(self._Ie)
 
   
   def _gen_symbols( self ) :
