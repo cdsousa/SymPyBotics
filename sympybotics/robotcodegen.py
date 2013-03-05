@@ -51,11 +51,8 @@ def dyn_code_to_func( lang, code, funcname, qderivlevel, dof, dynparam_symbols=[
         for i in range(qderivlevel+1):
             func_parms.append('d'*i+'q')
         subs_pairs += _gen_q_dq_ddq_subs(dof)
-    return codegen.code_to_func(  lang, code, funcname, func_parms, subs_pairs )
+    return symcode.generation.code_to_func(  lang, code, funcname, func_parms, subs_pairs )
 
 
-def dyn_matrix_to_func( lang, ivars, matrix, funcname, qderivlevel, dof, dynparam_symbols=[] ):
-    code = codegen.optimize_code( (ivars, sympy.flatten(matrix)), ivarnames='aux' )
-    return dyn_code_to_func( lang, code, funcname, qderivlevel, dof, dynparam_symbols=[] )
 
 

@@ -16,7 +16,7 @@ class Subexprs(object):
     elif mode == 'whole_exprs':
       self._collect_func = self._collect_exprs
     else:
-      raise Exception("No '%s' sub-expressions collection mode known."%mode)
+      raise Exception("No '%s' sub-expression collection mode known."%mode)
     
     
   def _collect_exprs(self, expr):

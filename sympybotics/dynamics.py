@@ -34,7 +34,7 @@ def _adjdual(g,h):
 _id = lambda x: x
 
 
-def _forward_rne(rbtdef, geom, ifunc=None):
+def _rne_forward(rbtdef, geom, ifunc=None):
   '''RNE forward pass.'''
   
   if not ifunc: ifunc = _id
@@ -57,7 +57,7 @@ def _forward_rne(rbtdef, geom, ifunc=None):
   return V, dV
 
 
-def _backward_rne(rbtdef, geom, Llm, V, dV, ifunc=None):
+def _rne_backward(rbtdef, geom, Llm, V, dV, ifunc=None):
   '''RNE backward pass.'''
   
   if not ifunc: ifunc = _id
@@ -84,7 +84,7 @@ def _backward_rne(rbtdef, geom, Llm, V, dV, ifunc=None):
 
 
 
-def _gen_tau_rne(rbtdef, geom, ifunc=None):
+def _rne(rbtdef, geom, ifunc=None):
   '''Generate joints generic forces/torques equation.'''
   
   if not ifunc: ifunc = _id
@@ -94,8 +94,8 @@ def _gen_tau_rne(rbtdef, geom, ifunc=None):
   for i in range( rbtdef.dof ):
     Llm[i] = (rbtdef.L[i].row_join(_skew(rbtdef.l[i])) ).col_join( (-_skew( rbtdef.l[i]) ).row_join(sympy.eye(3)*rbtdef.m[i]))
 
-  V, dV = _forward_rne( rbtdef, geom, ifunc )
-  tau = _backward_rne( rbtdef, geom, Llm, V, dV, ifunc )
+  V, dV = _rne_forward( rbtdef, geom, ifunc )
+  tau = _rne_backward( rbtdef, geom, Llm, V, dV, ifunc )
 
   return tau
 
@@ -106,14 +106,14 @@ def _gen_regressor_rne(rbtdef, geom, ifunc=None):
   
   if not ifunc: ifunc = _id
 
-  V, dV = _forward_rne( rbtdef, geom, ifunc )
+  V, dV = _rne_forward( rbtdef, geom, ifunc )
 
   dynparms = rbtdef.dynparms()
 
   Y = sympy.zeros( ( rbtdef.dof, len(dynparms) ) )
   
   if rbtdef.frictionmodel == 'simple':
-    fric = _gen_fricterm(rbtdef)
+    fric = _gen_frictionterm(rbtdef)
     fric_dict = dict( zip( rbtdef.fc, [0]*len(rbtdef.fc) ) )
     fric_dict.update( dict( zip( rbtdef.fv, [0]*len(rbtdef.fv) ) ) )
 
@@ -128,7 +128,7 @@ def _gen_regressor_rne(rbtdef, geom, ifunc=None):
       
       Llm[i] = ( ( L.row_join(_skew(r)) ).col_join( (-_skew(r) ).row_join(sympy.eye(3)*m) ) )
 
-    Y[:,p] = _backward_rne( rbtdef, geom, Llm, V, dV, ifunc )
+    Y[:,p] = _rne_backward( rbtdef, geom, Llm, V, dV, ifunc )
 
     if rbtdef.frictionmodel == 'simple':
       select = copy.copy(fric_dict)
@@ -139,28 +139,28 @@ def _gen_regressor_rne(rbtdef, geom, ifunc=None):
 
 
 
-def _gen_gravterm_rne(rbtdef, geom, ifunc=None):
+def _gen_gravityterm_rne(rbtdef, geom, ifunc=None):
   '''Generate gravity force equation.'''
   if not ifunc: ifunc = _id
   rbtdeftmp = copy.deepcopy(rbtdef)
   rbtdeftmp.dq = sympy.zeros((rbtdeftmp.dof,1))
   rbtdeftmp.ddq = sympy.zeros((rbtdeftmp.dof,1))
   geomtmp = geometry.Geometry(rbtdeftmp)
-  return _gen_tau_rne(rbtdeftmp, geomtmp, ifunc)
+  return _rne(rbtdeftmp, geomtmp, ifunc)
 
 
-def _gen_ccfterm_rne(rbtdef, geom, ifunc=None):
+def _gen_coriolisterm_rne(rbtdef, geom, ifunc=None):
   '''Generate Coriolis and centriptal forces equation.'''
   if not ifunc: ifunc = _id
   rbtdeftmp = copy.deepcopy(rbtdef)
   rbtdeftmp.gravity = sympy.zeros((3,1))
   rbtdeftmp.ddq = sympy.zeros((rbtdeftmp.dof,1))
   geomtmp = geometry.Geometry(rbtdeftmp)
-  return _gen_tau_rne(rbtdeftmp, geomtmp, ifunc)
+  return _rne(rbtdeftmp, geomtmp, ifunc)
 
 
 
-def _gen_massmatrix_rne(rbtdef, geom, ifunc=None):
+def _gen_inertiamatrix_rne(rbtdef, geom, ifunc=None):
   '''Generate mass matrix.'''
   
   if not ifunc: ifunc = _id
@@ -181,8 +181,8 @@ def _gen_massmatrix_rne(rbtdef, geom, ifunc=None):
     rbtdeftmp.ddq[i] = 1
     geomtmp = geometry.Geometry(rbtdeftmp)
 
-    V, dV = _forward_rne( rbtdeftmp, geomtmp, ifunc )
-    Mcoli = _backward_rne( rbtdeftmp, geomtmp, Llm, V, dV, ifunc )
+    V, dV = _rne_forward( rbtdeftmp, geomtmp, ifunc )
+    Mcoli = _rne_backward( rbtdeftmp, geomtmp, Llm, V, dV, ifunc )
 
     # It's done like this since M is symmetric:
     M[:,i] = ( M[i,:i].T ) .col_join( Mcoli[i:,:] )
@@ -191,7 +191,7 @@ def _gen_massmatrix_rne(rbtdef, geom, ifunc=None):
 
 
 
-def _gen_fricterm(rbtdef, ifunc=None):
+def _gen_frictionterm(rbtdef, ifunc=None):
   '''Generate friction forces (simple Coulomb and viscouse model).'''
   if not ifunc: ifunc = _id
   fric = sympy.zeros((rbtdef.dof,1))
@@ -253,30 +253,26 @@ class Dynamics(object):
     self.dynparms = sympy.Matrix( rbtdef.dynparms() )
     self.n_dynparms =  len( self.dynparms )
     
-    self.delta = self.dynparms
-    self.n_delta = self.n_dynparms
-    
   def gen_tau(self, ifunc=None):
-    self.tau = _gen_tau_rne(self.rbtdef, self.geom, ifunc)
+    self.tau = _rne(self.rbtdef, self.geom, ifunc)
     
-  def gen_gravterm(self, ifunc=None):
-    self.g = _gen_gravterm_rne(self.rbtdef, self.geom, ifunc)
+  def gen_gravityterm(self, ifunc=None):
+    self.gravityterm = _gen_gravityterm_rne(self.rbtdef, self.geom, ifunc)
     
-  def gen_ccfterm(self, ifunc=None):
-    self.c = _gen_ccfterm_rne(self.rbtdef, self.geom, ifunc)
+  def gen_coriolisterm(self, ifunc=None):
+    self.coriolisterm = _gen_coriolisterm_rne(self.rbtdef, self.geom, ifunc)
     
-  def gen_massmatrix(self, ifunc=None):
-    self.M = _gen_massmatrix_rne(self.rbtdef, self.geom, ifunc)
+  def gen_inertiamatrix(self, ifunc=None):
+    self.inertiamatrix = _gen_inertiamatrix_rne(self.rbtdef, self.geom, ifunc)
 
   def gen_regressor(self, ifunc=None):
     self.regressor = _gen_regressor_rne(self.rbtdef, self.geom, ifunc)
-    self.H = self.regressor
     
-  def gen_fricterm(self, ifunc=None):
+  def gen_frictionterm(self, ifunc=None):
     if self.rbtdef.frictionmodel == 'simple':
-      self.f = _gen_fricterm(self.rbtdef, ifunc)
+      self.frictionterm = _gen_frictionterm(self.rbtdef, ifunc)
     else:
-      self.f = sympy.zeros(self.dof,1)
+      self.frictionterm = sympy.zeros(self.dof,1)
 
   def calc_base_parms(self, regressor_func=None):
 
@@ -292,26 +288,23 @@ class Dynamics(object):
       exec(func_def_regressor)
       regressor_func = local_regressor_func
     
-    Pb, Pd, Kd = _find_dyn_parm_deps( self.dof, self.n_delta, regressor_func )
+    Pb, Pd, Kd = _find_dyn_parm_deps( self.dof, self.n_dynparms, regressor_func )
 
     self.Pb = sympy.Matrix(Pb).applyfunc(lambda x: x.nsimplify())
     self.Pd = sympy.Matrix(Pd).applyfunc(lambda x: x.nsimplify())
     self.Kd = sympy.Matrix(Kd).applyfunc(lambda x: x.nsimplify())
 
-    self.base_idxs = ( numpy.matrix([[i for i in range(self.n_delta)]]) * numpy.matrix(Pb) ).astype(float).astype(int).tolist()[0]
+    self.base_idxs = ( numpy.matrix([[i for i in range(self.n_dynparms)]]) * numpy.matrix(Pb) ).astype(float).astype(int).tolist()[0]
 
-    self.baseparms = ( self.Pb.T + self.Kd * self.Pd.T ) * self.delta
+    self.baseparms = ( self.Pb.T + self.Kd * self.Pd.T ) * self.dynparms
     self.n_base = len( self.baseparms )
     self.base_regressor = self.regressor * self.Pb
     
-    self.beta = self.baseparms
-    self.n_beta = self.n_base
-    self.Hb = self.base_regressor
     
   def gen_all(self, ifunc=None):
     self.gen_tau(ifunc)
-    self.gen_gravterm(ifunc)
-    self.gen_ccfterm(ifunc)
-    self.gen_massmatrix(ifunc)
+    self.gen_gravityterm(ifunc)
+    self.gen_coriolisterm(ifunc)
+    self.gen_inertiamatrix(ifunc)
     self.gen_regressor(ifunc)
     self.calc_base_parms()

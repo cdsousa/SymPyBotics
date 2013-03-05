@@ -20,7 +20,7 @@ class RobotAllSymb(object):
     self.dof = rbtdef.dof
     
     self.geom = geometry.Geometry(self.rbtdef)
-    self.kin = geometry.Geometry(self.rbtdef, self.geom)
+    self.kin = kinematics.Kinematics(self.rbtdef, self.geom)
     
     self.dyn = dynamics.Dynamics(self.rbtdef, self.geom)
     self.dyn.gen_all()
@@ -46,31 +46,31 @@ class RobotDynCode(object):
     
     _fprint('generating gravity term code')
     g_se = symcode.subexprs.Subexprs(codecollectmode)
-    self.dyn.gen_gravterm(g_se.collect)
-    self.g_code  = (g_se.subexprs, self.dyn.g)
+    self.dyn.gen_gravityterm(g_se.collect)
+    self.g_code  = (g_se.subexprs, self.dyn.gravityterm)
     
     _fprint('generating coriolis term code')
     c_se = symcode.subexprs.Subexprs(codecollectmode)
-    self.dyn.gen_ccfterm(c_se.collect)
-    self.c_code  = (c_se.subexprs, self.dyn.c)
+    self.dyn.gen_coriolisterm(c_se.collect)
+    self.c_code  = (c_se.subexprs, self.dyn.coriolisterm)
     
-    _fprint('generating mass matrix code')
+    _fprint('generating inertia matrix code')
     M_se = symcode.subexprs.Subexprs(codecollectmode)
-    self.dyn.gen_massmatrix(M_se.collect)
-    self.M_code  = (M_se.subexprs, self.dyn.M)
+    self.dyn.gen_inertiamatrix(M_se.collect)
+    self.M_code  = (M_se.subexprs, self.dyn.inertiamatrix)
     
     _fprint('generating regressor matrix code')
     H_se = symcode.subexprs.Subexprs(codecollectmode)
     self.dyn.gen_regressor(H_se.collect)
-    self.H_code  = (H_se.subexprs, self.dyn.H)
+    self.H_code  = (H_se.subexprs, self.dyn.regressor)
     
     self._codes = ['tau_code', 'g_code', 'c_code', 'M_code', 'H_code']
     
     if self.rbtdef.frictionmodel != None:    
       _fprint('generating friction term code')
       f_se = symcode.subexprs.Subexprs(codecollectmode)
-      self.dyn.gen_fricterm(f_se.collect)
-      self.f_code  = (f_se.subexprs, self.dyn.H)
+      self.dyn.gen_frictionterm(f_se.collect)
+      self.f_code  = (f_se.subexprs, self.dyn.frictionterm)
       self._codes.append('f_code')
       
     _fprint('done')
@@ -80,7 +80,7 @@ class RobotDynCode(object):
     
     _fprint('calculating base parameters and regressor code')
     self.dyn.calc_base_parms()
-    self.Hb_code  = (self.H_code[0], self.dyn.Hb)
+    self.Hb_code  = (self.H_code[0], self.dyn.base_regressor)
     
     self._codes.append('Hb_code')
     

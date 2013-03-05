@@ -48,7 +48,7 @@ def optim_dce( code ):
 
 
 def optim_cse( code, auxvarname = 'cse' ):
-    """Performe 'common sub-expressions elimination' optimization on code."""
+    """Performe 'common sub-expression elimination' optimization on code."""
 
     code_in = code
     
@@ -227,7 +227,7 @@ def fully_optimize_code( code, ivarnames=None, singlevarout=False, clearcache=0,
   code = optim_dce_sup(code)
   if clearcache > 1: sympy.cache.clear_cache()
   
-  if debug: _fprint(' common sub-expressions elimination')
+  if debug: _fprint(' common sub-expression elimination')
   code = optim_cse(code,'cse')
   if clearcache > 1: sympy.cache.clear_cache()
   
