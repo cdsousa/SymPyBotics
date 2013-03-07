@@ -81,20 +81,12 @@ class RobotDef(object):
   def __repr__(self) :
     return 'RobotDef instance: ' + self.name
   
+    
+  @property
+  def L(self): return _elementslist_to_tensorlist(self.Le)
   
   @property
-  def Le(self): return self._Le
-  @Le.setter
-  def Le(self, Le):
-    self._Le = Le
-    self.L = _elementslist_to_tensorlist(self._Le)
-  
-  @property
-  def Ie(self): return self._Ie
-  @Ie.setter
-  def Ie(self, Ie):
-    self._Ie = Ie
-    self.I = _elementslist_to_tensorlist(self._Ie)
+  def I(self): return _elementslist_to_tensorlist(self.Ie)
 
   
   def _gen_symbols( self ) :
