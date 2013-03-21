@@ -3,6 +3,8 @@ import sympy
 import cvxopt
 import cvxopt.solvers
 
+def mrepl(m,repl):
+  return m.applyfunc(lambda x: x.xreplace(repl))
 
 def skew(v):
   return sympy.Matrix( [ [     0, -v[2],  v[1] ],
@@ -75,7 +77,7 @@ def prepare_sdp( var_symbs, LMI_matrix, split_diag_blocks=True):
 
         Fi = [0]*(1+vn)
 
-        Fsym = LMI_matrix.subs( zero_subs )
+        Fsym = mrepl( LMI_matrix, zero_subs )
         Fi[0] = numpy.matrix(Fsym).astype(float)
 
         for i,s in enumerate(v):
@@ -87,7 +89,7 @@ def prepare_sdp( var_symbs, LMI_matrix, split_diag_blocks=True):
     return blocks_Fi
 
 
-def sdp( c, Ai_blocks, solver='dsdp', verbose=0, interpret=False, maxiters=1000, tolerance=10e-7 ):
+def sdp( c, Ai_blocks, primalstar=None, dualstart=None, solver='dsdp', verbose=0, interpret=False, maxiters=1000, tolerance=10e-7 ):
 
 
   c = cvxopt.matrix( c )
@@ -103,7 +105,7 @@ def sdp( c, Ai_blocks, solver='dsdp', verbose=0, interpret=False, maxiters=1000,
       raise Exception('error: unknown solver (available: dsdp or conelp)')
 
   if solver == 'conelp': solver == ''
-
+  
   cvxopt.solvers.options['show_progress'] = (1 if verbose > 0 else 0) #True/False (default: True)
   cvxopt.solvers.options['maxiters'] = maxiters #positive integer (default: 100)
   # cvxopt.solvers.options['refinement'] #positive integer (default: 1)
@@ -111,6 +113,7 @@ def sdp( c, Ai_blocks, solver='dsdp', verbose=0, interpret=False, maxiters=1000,
   cvxopt.solvers.options['reltol'] = tolerance #scalar (default: 1e-6)
   cvxopt.solvers.options['feastol'] = tolerance #scalar (default: 1e-7).
 
+  cvxopt.solvers.options['DSDP_Monitor'] = (1 if verbose > 0 else 0) #True/False (default: 0)
   cvxopt.solvers.options['DSDP_MaxIts'] = maxiters #positive integer
   cvxopt.solvers.options['DSDP_GapTolerance'] = tolerance #scalar (default: 1e-5).
 
