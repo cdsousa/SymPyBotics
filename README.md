@@ -3,6 +3,10 @@ SymPyBotics
 
 Symbolic Robotics Toolbox using Python and SymPy
 
+
+Depends on [SymCode](https://github.com/cdsousa/symcode).
+
+
 Example
 -------
 
@@ -48,7 +52,7 @@ done
 ~~~~~~~~~~~
 
 ~~~~~~~~~~~Python
->>> rbt.kin.J[-1]
+>>> print(rbt.kin.J[-1])
 [0,        0]
 [0,        0]
 [0,        0]
@@ -97,7 +101,7 @@ void tau( double* tau_out, const double* parms, const double* q, const double* d
 
 Dynamic base parameters:
 
-~~~~~~~~~~~
+~~~~~~~~~~~Python
 >>> rbt.calc_base_parms()
 calculating base parameters and regressor code
 done
