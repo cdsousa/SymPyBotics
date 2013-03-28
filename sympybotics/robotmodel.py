@@ -1,11 +1,11 @@
 
 import sys
 import sympy
+import symcode
 
 from . import geometry
 from . import kinematics
 from . import dynamics
-from . import symcode
 
 def _fprint(x):
   print(x)

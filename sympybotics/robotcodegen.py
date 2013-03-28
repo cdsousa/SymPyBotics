@@ -1,7 +1,8 @@
 
 import sympy
 
-from . import symcode
+import symcode
+
 from . import geometry, kinematics
 
 

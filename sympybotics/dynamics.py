@@ -4,7 +4,7 @@ import sympy
 import numpy
 
 from . import geometry
-from . import symcode
+import symcode
 
 
 def _skew(v):
