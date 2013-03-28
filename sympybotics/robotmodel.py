@@ -34,7 +34,10 @@ class RobotDynCode(object):
     self.rbtdef = rbtdef
     self.dof = rbtdef.dof
     
+    _fprint('generating geometric model')
     self.geom = geometry.Geometry(self.rbtdef)
+    
+    _fprint('generating kinematic model')
     self.kin = kinematics.Kinematics(self.rbtdef, self.geom)
     
     self.dyn = dynamics.Dynamics(self.rbtdef, self.geom)
