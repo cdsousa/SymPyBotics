@@ -1,7 +1,7 @@
 SymPyBotics
 ===========
 
-Symbolic Robotics Toolbox using Python and SymPy
+Robot dynamic symbolic model generator
 
 
 Depends on [SymCode](https://github.com/cdsousa/symcode).
@@ -66,7 +66,7 @@ done
 Dynamic code optimization:
 
 ```Python
->>> rbt.optimize_code(mode='light')
+>>> rbt.optimize_code(mode='light') # optimization can be 'light' or 'heavy'
 optimizing tau_code
 optimizing g_code
 optimizing c_code
@@ -126,3 +126,22 @@ done
 [         fv_2]
 [         fc_2]
 ```
+
+Author
+------
+
+[Cristóvão Duarte Sousa](https://github.com/cdsousa)
+
+Install
+-------
+
+From git source:
+
+    git clone git@github.com:cdsousa/sympybotics.git
+    cd sympybotics
+    python setup.py install
+
+License
+-------
+
+New BSD license. See LICENSE.txt

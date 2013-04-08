@@ -3,4 +3,5 @@ TODO
 
 - documentation
 - test unit
-- installer
+- add motor rotor inertia to model
+- add custom motor to joint models
