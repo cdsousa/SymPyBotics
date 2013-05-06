@@ -277,9 +277,9 @@ class Dynamics(object):
   def calc_base_parms(self, regressor_func=None):
 
     if regressor_func == None:
-      se = symcode.subexprs.Subexprs(mode='unique_ops')
+      se = symcode.subexprs.Subexprs()
       regressor = _gen_regressor_rne(self.rbtdef, self.geom, ifunc=se.collect)
-      code = (se.subexprs, sympy.flatten(regressor))
+      code = se.get(sympy.flatten(regressor))
       func_def_regressor = symcode.generation.code_to_func('python', code, 'local_regressor_func', ['q','dq','ddq'], [('q'+str(i+1), 'q['+str(i)+']') for i in range(self.dof)])
       global sin, cos, sign
       sin = numpy.sin

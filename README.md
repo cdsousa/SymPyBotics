@@ -33,7 +33,7 @@ Definition of a 2 DOF example robot:
 Generation of geometric, kinematic and dynamic models:
 
 ```Python
->>> rbt = sympybotics.RobotDynCode(rbtdef, codecollectmode='unique_ops')
+>>> rbt = sympybotics.RobotDynCode(rbtdef)
 generating geometric model
 generating kinematic model
 generating tau code
@@ -63,19 +63,6 @@ done
 [1,        0]
 ```
 
-Dynamic code optimization:
-
-```Python
->>> rbt.optimize_code(mode='light') # optimization can be 'light' or 'heavy'
-optimizing tau_code
-optimizing g_code
-optimizing c_code
-optimizing M_code
-optimizing H_code
-optimizing f_code
-done
-```
-
 C function generation:
 
 ```Python
@@ -85,22 +72,25 @@ C function generation:
 ```C
 void tau( double* tau_out, const double* parms, const double* q, const double* dq, const double* ddq )
 {
-  double tmp0 = -dq[0];
-  double tmp1 = -ddq[0];
-  double tmp2 = cos(q[1]);
-  double tmp3 = -tmp0*tmp2;
-  double tmp4 = sin(q[1]);
-  double tmp5 = -tmp0*tmp4;
-  double tmp8 = dq[1]*tmp0*tmp4 - tmp1*tmp2;
-  double tmp11 = -dq[1]*tmp0*tmp2 - tmp1*tmp4;
-  double tmp12 = 9.81*tmp2;
-  double tmp13 = 9.81*tmp4;
-  double tmp17 = parms[14]*tmp3 + parms[16]*dq[1] + parms[17]*tmp5;
-  double tmp24 = parms[13]*tmp3 + parms[15]*dq[1] + parms[16]*tmp5;
-  double tmp38 = parms[12]*tmp3 + parms[13]*dq[1] + parms[14]*tmp5;
+  double x0 = sin(q[1]);
+  double x1 = -dq[0];
+  double x2 = -x1;
+  double x3 = x0*x2;
+  double x4 = cos(q[1]);
+  double x5 = x2*x4;
+  double x6 = parms[13]*x5 + parms[15]*dq[1] + parms[16]*x3;
+  double x7 = parms[14]*x5 + parms[16]*dq[1] + parms[17]*x3;
+  double x8 = -ddq[0];
+  double x9 = -x4;
+  double x10 = dq[1]*x1;
+  double x11 = x0*x10 + x8*x9;
+  double x12 = -x0*x8 - x10*x4;
+  double x13 = 9.81*x0;
+  double x14 = 9.81*x4;
+  double x15 = parms[12]*x5 + parms[13]*dq[1] + parms[14]*x3;
 
-  tau_out[0] = -parms[3]*tmp1 + tmp2*(parms[12]*tmp8 + parms[13]*ddq[1] + parms[14]*tmp11 + dq[1]*tmp17 + parms[19]*tmp13 - tmp24*tmp5) + tmp4*(parms[14]*tmp8 + parms[16]*ddq[1] + parms[17]*tmp11 - dq[1]*tmp38 - parms[19]*tmp12 + tmp24*tmp3);
-  tau_out[1] = parms[13]*tmp8 + parms[15]*ddq[1] + parms[16]*tmp11 - parms[18]*tmp13 + parms[20]*tmp12 - tmp17*tmp3 + tmp38*tmp5;
+  tau_out[0] = -parms[3]*x8 + x0*(parms[14]*x11 + parms[16]*ddq[1] + parms[17]*x12 - dq[1]*x15 - parms[19]*x14 + x5*x6) - x9*(parms[12]*x11 + parms[13]*ddq[1] + parms[14]*x12 + dq[1]*x7 + parms[19]*x13 - x3*x6);
+  tau_out[1] = parms[13]*x11 + parms[15]*ddq[1] + parms[16]*x12 - parms[18]*x13 + parms[20]*x14 + x15*x3 - x5*x7;
 
   return;
 }
