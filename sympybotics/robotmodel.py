@@ -1,6 +1,8 @@
 
 import sys
 import sympy
+import numpy
+
 import symcode
 
 from . import geometry
@@ -66,6 +68,7 @@ class RobotDynCode(object):
     H_se = symcode.subexprs.Subexprs()
     self.dyn.gen_regressor(H_se.collect)
     self.H_code  = H_se.get(self.dyn.regressor)
+    self._H_se =H_se
     
     self._codes = ['tau_code', 'g_code', 'c_code', 'M_code', 'H_code']
     
@@ -81,9 +84,19 @@ class RobotDynCode(object):
     
   def calc_base_parms(self):
     
+    q_subs = {q:'q[%d]'%i for i, q in enumerate(self.rbtdef.q)}
+    q_subs.update({dq:'dq[%d]'%i for i, dq in enumerate(self.rbtdef.dq)})
+    q_subs.update({ddq:'ddq[%d]'%i for i, ddq in enumerate(self.rbtdef.ddq)})
+    func_def_regressor = symcode.generation.code_to_func('python', self.H_code, 'regressor_func', ['q','dq','ddq'], q_subs)
+    global sin, cos, sign
+    sin = numpy.sin
+    cos = numpy.cos
+    sign = numpy.sign
+    exec(func_def_regressor)
+    
     _fprint('calculating base parameters and regressor code')
-    self.dyn.calc_base_parms()
-    self.Hb_code  = (self.H_code[0], self.dyn.base_regressor)
+    self.dyn.calc_base_parms(regressor_func)
+    self.Hb_code  = self._H_se.get(self.H_code[1]*self.Pb)
     
     self._codes.append('Hb_code')
     

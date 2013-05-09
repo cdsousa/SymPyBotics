@@ -273,20 +273,15 @@ class Dynamics(object):
       self.frictionterm = _gen_frictionterm(self.rbtdef, ifunc)
     else:
       self.frictionterm = sympy.zeros(self.dof,1)
+    
+  def gen_all(self, ifunc=None):
+    self.gen_tau(ifunc)
+    self.gen_gravityterm(ifunc)
+    self.gen_coriolisterm(ifunc)
+    self.gen_inertiamatrix(ifunc)
+    self.gen_regressor(ifunc)
 
-  def calc_base_parms(self, regressor_func=None):
-
-    if regressor_func == None:
-      se = symcode.subexprs.Subexprs()
-      regressor = _gen_regressor_rne(self.rbtdef, self.geom, ifunc=se.collect)
-      code = se.get(sympy.flatten(regressor))
-      func_def_regressor = symcode.generation.code_to_func('python', code, 'local_regressor_func', ['q','dq','ddq'], [('q'+str(i+1), 'q['+str(i)+']') for i in range(self.dof)])
-      global sin, cos, sign
-      sin = numpy.sin
-      cos = numpy.cos
-      sign = numpy.sign
-      exec(func_def_regressor)
-      regressor_func = local_regressor_func
+  def calc_base_parms(self, regressor_func):
     
     Pb, Pd, Kd = _find_dyn_parm_deps( self.dof, self.n_dynparms, regressor_func )
 
@@ -298,13 +293,3 @@ class Dynamics(object):
 
     self.baseparms = ( self.Pb.T + self.Kd * self.Pd.T ) * self.dynparms
     self.n_base = len( self.baseparms )
-    self.base_regressor = self.regressor * self.Pb
-    
-    
-  def gen_all(self, ifunc=None):
-    self.gen_tau(ifunc)
-    self.gen_gravityterm(ifunc)
-    self.gen_coriolisterm(ifunc)
-    self.gen_inertiamatrix(ifunc)
-    self.gen_regressor(ifunc)
-    self.calc_base_parms()

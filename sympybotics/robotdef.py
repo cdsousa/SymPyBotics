@@ -102,22 +102,22 @@ class RobotDef(object):
     dq = self.dq = sympy.Matrix( [ [_new_sym('dq'+str(i+1))] for i in range(self.dof) ] )
     ddq = self.ddq = sympy.Matrix( [ [_new_sym('ddq'+str(i+1))] for i in range(self.dof) ] )
     
-    m = self.m = list( range( self.dof ) )
-    l = self.l = list( range( self.dof ) )
-    Le = self.Le = list( range( self.dof ) )
+    m = self.m = list(range(self.dof) )
+    l = self.l = list(range(self.dof) )
+    Le = self.Le = list(range(self.dof) )
 
     L = self.L
 
-    r = self.r = list( range( self.dof ) )
-    Ie = self.Ie = list( range( self.dof ) )
+    r = self.r = list(range(self.dof) )
+    Ie = self.Ie = list(range(self.dof) )
     
     I = self.I
     
-    fv = self.fv = list( range( self.dof ) )
-    fc = self.fc = list( range( self.dof ) )
+    fv = self.fv = list(range(self.dof) )
+    fc = self.fc = list(range(self.dof) )
     
-    I_funcof_L = self.I_funcof_L = list( range( self.dof ) )
-    L_funcof_I = self.L_funcof_I = list( range( self.dof ) )
+    I_funcof_L = self.I_funcof_L = list(range(self.dof) )
+    L_funcof_I = self.L_funcof_I = list(range(self.dof) )
     
     dict_I2Lexp = self.dict_I2Lexp = dict()
     dict_L2Iexp = self.dict_L2Iexp = dict()
@@ -239,5 +239,18 @@ class RobotDef(object):
       if self.frictionmodel == 'simple': parms += [ self.fv[i], self.fc[i] ]
 
     return parms
+      
 
-
+  def _set_new_dynparms(self, dynparms):
+    """Define new symbols to dynamic parameters."""
+    symparms = self.dynparms()
+    parmsidx = dict(zip(symparms, range(len(symparms))))
+    for i in range(self.dof):
+        for x, Le_xx in enumerate(self.Le[i]):
+            self.Le[i][x] = dynparms[parmsidx[Le_xx]]
+        for x, l_x in enumerate(self.l[i]):
+            self.l[i][x] = dynparms[parmsidx[l_x]]
+        self.m[i] = dynparms[parmsidx[self.m[i]]]
+        if self.frictionmodel == 'simple':
+            self.fv[i] = dynparms[parmsidx[self.fv[i]]]
+            self.fc[i] = dynparms[parmsidx[self.fc[i]]]
