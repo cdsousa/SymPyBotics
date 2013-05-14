@@ -68,7 +68,7 @@ class RobotDynCode(object):
     H_se = symcode.subexprs.Subexprs()
     self.dyn.gen_regressor(H_se.collect)
     self.H_code  = H_se.get(self.dyn.regressor)
-    self._H_se =H_se
+    self._H_se = H_se._subexp_iv
     
     self._codes = ['tau_code', 'g_code', 'c_code', 'M_code', 'H_code']
     
@@ -96,7 +96,10 @@ class RobotDynCode(object):
     
     _fprint('calculating base parameters and regressor code')
     self.dyn.calc_base_parms(regressor_func)
-    self.Hb_code  = self._H_se.get(self.H_code[1]*self.Pb)
+    
+    H_se = symcode.subexprs.Subexprs()
+    H_se._subexp_iv = self._H_se
+    self.Hb_code  = H_se.get(self.H_code[1]*self.dyn.Pb)
     
     self._codes.append('Hb_code')
     
