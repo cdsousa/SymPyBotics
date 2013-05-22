@@ -3,6 +3,7 @@ import copy
 import sympy
 import numpy
 
+from . import robotdef
 from . import geometry
 import symcode
 
@@ -34,7 +35,7 @@ def _adjdual(g,h):
 _id = lambda x: x
 
 
-def _rne_forward(rbtdef, geom, ifunc=None):
+def _rne_lie_forward(rbtdef, geom, ifunc=None):
   '''RNE forward pass.'''
   
   if not ifunc: ifunc = _id
@@ -57,8 +58,10 @@ def _rne_forward(rbtdef, geom, ifunc=None):
   return V, dV
 
 
-def _rne_backward(rbtdef, geom, Llm, V, dV, ifunc=None):
+def _rne_lie_backward(rbtdef, geom, fw_results, ifunc=None):
   '''RNE backward pass.'''
+  
+  V, dV = fw_results
   
   if not ifunc: ifunc = _id
 
@@ -72,8 +75,10 @@ def _rne_backward(rbtdef, geom, Llm, V, dV, ifunc=None):
   
   # Backward
   for i in range(rbtdef.dof-1,-1,-1):
+    
+    Llm = (rbtdef.L[i].row_join(_skew(rbtdef.l[i])) ).col_join( (-_skew( rbtdef.l[i]) ).row_join(sympy.eye(3)*rbtdef.m[i]))
 
-    F[i] =  _Adjdual( Tdh_inv[i+1], F[i+1] )  +  Llm[i] * dV[i]  -  _adjdual( V[i],  Llm[i] * V[i] )
+    F[i] =  _Adjdual( Tdh_inv[i+1], F[i+1] )  +  Llm * dV[i]  -  _adjdual( V[i],  Llm * V[i] )
 
     F[i] = ifunc(F[i])
 
@@ -82,22 +87,117 @@ def _rne_backward(rbtdef, geom, Llm, V, dV, ifunc=None):
   return tau
 
 
+def _rne_khalil_forward(rbtdef, geom, ifunc=None):
+  '''RNE forward pass.'''
+  
+  if not ifunc: ifunc = _id
+  
+  w = list(range(0,rbtdef.dof+1))
+  dw = list(range(0,rbtdef.dof+1))
+  dV = list(range(0,rbtdef.dof+1))
+  U = list(range(0,rbtdef.dof+1))
+
+  w[-1] = sympy.zeros((3,1))
+  dw[-1] = sympy.zeros((3,1))
+  dV[-1] = -rbtdef.gravity
+  U[-1] = sympy.zeros((3,3))
+  
+  z = sympy.Matrix([0, 0, 1])
+  
+  # Forward
+  for i in range(rbtdef.dof):
+      
+      s = rbtdef._links_sigma[i]
+      ns = 1 - s
+      
+      w_pj = geom.Rdh[i].T * w[i-1]
+      
+      w[i] = w_pj + ns * rbtdef.dq[i] * z
+      w[i] = ifunc(w[i])
+      
+      dw[i] = geom.Rdh[i].T * dw[i-1] + ns * (rbtdef.ddq[i] * z + w_pj.cross(rbtdef.dq[i] * z).T )
+      dw[i] = ifunc(dw[i])
+      
+      dV[i] = geom.Rdh[i].T * (dV[i-1] + U[i-1] * geom.pdh[i] ) + s * (rbtdef.ddq[i] * z + 2 * w_pj.cross(rbtdef.dq[i] * z).T )
+      dV[i] = ifunc(dV[i])
+      
+      U[i] = _skew(dw[i]) + _skew(w[i])**2
+      U[i] = ifunc(U[i])
+  
+  return w, dw, dV, U
+
+
+def _rne_khalil_backward(rbtdef, geom, fw_results, ifunc=None):
+    '''RNE backward pass.'''
+    
+    w, dw, dV, U = fw_results
+    
+    if not ifunc: ifunc = _id
+    
+    # extend Rdh so that Rdh[dof] return identity
+    Rdh = geom.Rdh + [sympy.eye(3)]
+    # extend pdh so that pRdh[dof] return zero
+    pdh = geom.pdh + [sympy.zeros((3,1))]
+    
+    F = list(range(rbtdef.dof))
+    M = list(range(rbtdef.dof))
+    f = list(range(rbtdef.dof+1))
+    m = list(range(rbtdef.dof+1))
+    
+    f[rbtdef.dof] = sympy.zeros((3,1))
+    m[rbtdef.dof] = sympy.zeros((3,1))
+    
+    z = sympy.Matrix([0, 0, 1])
+    
+    tau = sympy.zeros((rbtdef.dof,1))
+    
+    # Backward
+    for i in range(rbtdef.dof-1,-1,-1):
+        
+        s = rbtdef._links_sigma[i]
+        ns = 1 - s
+        
+        F[i] = rbtdef.m[i] * dV[i] + U[i] * sympy.Matrix(rbtdef.l[i])
+        F[i] = ifunc(F[i])
+        
+        M[i] = rbtdef.L[i] * dw[i] + w[i].cross(rbtdef.L[i] * w[i]).T + sympy.Matrix(rbtdef.l[i]).cross(dV[i]).T
+        M[i] = ifunc(M[i])
+        
+        f_nj = Rdh[i+1] * f[i+1]
+        
+        f[i] = F[i] + f_nj # + f_e[i]
+        f[i] = ifunc(f[i])
+        
+        m[i] = M[i] + Rdh[i+1] * m[i+1] + pdh[i+1].cross(f_nj).T # + m_e[i]
+        m[i] = ifunc(m[i])
+        
+        tau[i] = ifunc((s*f[i] + ns*m[i]).T * z) # + Irotor[i] * ddq[i]
+        
+    return tau
+
+
+def _rne_forward(rbtdef, geom, ifunc=None):
+    if rbtdef._dh_convention == 'standard':
+        rne_forward = _rne_lie_forward
+    elif rbtdef._dh_convention == 'modified':
+        rne_forward = _rne_khalil_forward
+    return rne_forward(rbtdef, geom, ifunc)
+    
+def _rne_backward(rbtdef, geom, fw_results, ifunc=None):
+    if rbtdef._dh_convention == 'standard':
+        rne_backward = _rne_lie_backward
+    elif rbtdef._dh_convention == 'modified':
+        rne_backward = _rne_khalil_backward
+    return rne_backward(rbtdef, geom, fw_results, ifunc)
 
 
 def _rne(rbtdef, geom, ifunc=None):
-  '''Generate joints generic forces/torques equation.'''
-  
-  if not ifunc: ifunc = _id
-      
-  Llm = list(range(rbtdef.dof))
-
-  for i in range( rbtdef.dof ):
-    Llm[i] = (rbtdef.L[i].row_join(_skew(rbtdef.l[i])) ).col_join( (-_skew( rbtdef.l[i]) ).row_join(sympy.eye(3)*rbtdef.m[i]))
-
-  V, dV = _rne_forward( rbtdef, geom, ifunc )
-  tau = _rne_backward( rbtdef, geom, Llm, V, dV, ifunc )
-
-  return tau
+    '''Generate joints generic forces/torques equation.'''
+    
+    fw_results = _rne_forward( rbtdef, geom, ifunc )
+    tau = _rne_backward( rbtdef, geom, fw_results, ifunc=ifunc )
+    
+    return tau
 
 
 
@@ -106,8 +206,10 @@ def _gen_regressor_rne(rbtdef, geom, ifunc=None):
   
   if not ifunc: ifunc = _id
 
-  V, dV = _rne_forward( rbtdef, geom, ifunc )
+  fw_results = _rne_forward( rbtdef, geom, ifunc )
 
+  rbtdeftmp = copy.deepcopy(rbtdef)
+  
   dynparms = rbtdef.dynparms()
 
   Y = sympy.zeros( ( rbtdef.dof, len(dynparms) ) )
@@ -119,16 +221,12 @@ def _gen_regressor_rne(rbtdef, geom, ifunc=None):
 
   for p,parm in enumerate(dynparms):
 
-    Llm = list(range(rbtdef.dof))
-
     for i in range(rbtdef.dof):
-      L = rbtdef.L[i].applyfunc(lambda x: 1 if x == parm else 0 )
-      r = rbtdef.l[i].applyfunc(lambda x: 1 if x == parm else 0 )
-      m = 1 if rbtdef.m[i] == parm else 0
-      
-      Llm[i] = ( ( L.row_join(_skew(r)) ).col_join( (-_skew(r) ).row_join(sympy.eye(3)*m) ) )
+      rbtdeftmp.Le[i] = map(lambda x: 1 if x == parm else 0, rbtdef.Le[i])
+      rbtdeftmp.l[i] = sympy.Matrix(rbtdef.l[i]).applyfunc(lambda x: 1 if x == parm else 0 )
+      rbtdeftmp.m[i] = 1 if rbtdef.m[i] == parm else 0
 
-    Y[:,p] = _rne_backward( rbtdef, geom, Llm, V, dV, ifunc )
+    Y[:,p] = _rne_backward( rbtdeftmp, geom, fw_results, ifunc=ifunc )
 
     if rbtdef.frictionmodel == 'simple':
       select = copy.copy(fric_dict)
@@ -136,6 +234,7 @@ def _gen_regressor_rne(rbtdef, geom, ifunc=None):
       Y[:,p] = ifunc( Y[:,p] + fric.subs(select) )
 
   return Y
+
 
 
 
@@ -165,11 +264,6 @@ def _gen_inertiamatrix_rne(rbtdef, geom, ifunc=None):
   
   if not ifunc: ifunc = _id
 
-  Llm = list(range(rbtdef.dof))
-
-  for i in range( rbtdef.dof ):
-    Llm[i] = ( rbtdef.L[i].row_join(_skew(rbtdef.l[i])) ).col_join( (-_skew( rbtdef.l[i]) ).row_join(sympy.eye(3)*rbtdef.m[i]) )
-
   M = sympy.zeros((rbtdef.dof,rbtdef.dof))
 
   rbtdeftmp = copy.deepcopy( rbtdef )
@@ -181,8 +275,8 @@ def _gen_inertiamatrix_rne(rbtdef, geom, ifunc=None):
     rbtdeftmp.ddq[i] = 1
     geomtmp = geometry.Geometry(rbtdeftmp)
 
-    V, dV = _rne_forward( rbtdeftmp, geomtmp, ifunc )
-    Mcoli = _rne_backward( rbtdeftmp, geomtmp, Llm, V, dV, ifunc )
+    fw_results = _rne_forward( rbtdeftmp, geomtmp, ifunc )
+    Mcoli = _rne_backward( rbtdeftmp, geomtmp, fw_results, ifunc=ifunc )
 
     # It's done like this since M is symmetric:
     M[:,i] = ( M[i,:i].T ) .col_join( Mcoli[i:,:] )

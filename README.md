@@ -16,7 +16,7 @@ Definition of a 2 DOF example robot:
 >>> import sympy
 >>> import sympybotics
 >>> pi = sympy.pi
->>> q = sympybotics.RobotDef.q
+>>> q = sympybotics.robotdef.q
 >>> rbtdef = sympybotics.RobotDef('Example Robot', # robot name
                               [ (-pi/2 ,0 , 0, q+pi/2 ),   # list of tuples with standard Denavit-Hartenberg parameters 
                                 ( pi/2 , 0, 0, q-pi/2 ) ], # (alpha, a, d, theta)

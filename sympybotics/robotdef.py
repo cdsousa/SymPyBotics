@@ -30,25 +30,28 @@ _joint_symb = _new_sym('q')
 def _joint_i_symb(i):
   return _new_sym( 'q'+str(i) )
 
-class RobotDef(object):
-  """Class that generates and holds robot definitions and symbols."""
+q = _joint_symb
 
-  q = _joint_symb
+_dh_alpha , _dh_a , _dh_d , _dh_theta = _new_sym('alpha,a,d,theta')
+default_dh_symbols = ( _dh_alpha , _dh_a , _dh_d , _dh_theta  )
 
-  _dh_alpha , _dh_a , _dh_d , _dh_theta = _new_sym('alpha,a,d,theta')
-  _default_dh_symbols = ( _dh_alpha , _dh_a , _dh_d , _dh_theta  )
-
-  _cos = sympy.cos
-  _sin = sympy.sin
-  _default_dh_transfmat = sympy.Matrix( [ 
+_cos = sympy.cos
+_sin = sympy.sin
+_standard_dh_transfmat = sympy.Matrix( [ 
     [ _cos(_dh_theta), -_sin(_dh_theta)*_cos(_dh_alpha),  _sin(_dh_theta)*_sin(_dh_alpha), _dh_a*_cos(_dh_theta) ],
     [ _sin(_dh_theta),  _cos(_dh_theta)*_cos(_dh_alpha), -_cos(_dh_theta)*_sin(_dh_alpha), _dh_a*_sin(_dh_theta) ],
-    [          0,             _sin(_dh_alpha),             _cos(_dh_alpha),            _dh_d ],
-    [          0,                      0,                      0,            1 ]
-    ] )
-    
+    [               0,                  _sin(_dh_alpha),                  _cos(_dh_alpha),                 _dh_d ],
+    [               0,                                0,                                0,                     1 ] ] )
+_modified_dh_transfmat = sympy.Matrix( [ 
+    [                 _cos(_dh_theta),                -_sin(_dh_theta),                0,                  _dh_a ],
+    [ _sin(_dh_theta)*_cos(_dh_alpha), _cos(_dh_theta)*_cos(_dh_alpha), -_sin(_dh_alpha), -_sin(_dh_alpha)*_dh_d ],
+    [ _sin(_dh_theta)*_sin(_dh_alpha), _cos(_dh_theta)*_sin(_dh_alpha),  _cos(_dh_alpha),  _cos(_dh_alpha)*_dh_d ],
+    [                               0,                               0,                0,                      1 ] ] )
+
+class RobotDef(object):
+  """Class that generates and holds robot definitions and symbols."""
   
-  def __init__(self,name,dh_parms,shortname=None):
+  def __init__(self, name, dh_parms, shortname=None, dh_convention='standard'):
     """
     Create RobotDef instance with data structures for robot geometry and symbols of robot dynamics.
     """
@@ -61,10 +64,17 @@ class RobotDef(object):
     else :
       self.shortname = ''.join(c for c in name.replace(' ','_').replace('.','_') if c.isalnum() or c == '_')
     
-    self.dh_symbols = RobotDef._default_dh_symbols
-    self.dh_transfmat = RobotDef._default_dh_transfmat
+    dh_convention = dh_convention.lower()
+    if dh_convention in ['standard', 'std', 'dh', 'sdh']:
+        self._dh_convention = 'standard'
+        self._dh_transfmat = _standard_dh_transfmat
+    elif dh_convention in ['modified', 'mod', 'mdh']:
+        self._dh_convention = 'modified'
+        self._dh_transfmat = _modified_dh_transfmat
     
-    self.dyn_parms_order = 'Khalil'
+    self._dh_symbols = default_dh_symbols
+    
+    self._dyn_parms_order = 'Khalil'
     
     self.frictionmodel = None # can be None or 'simple'
 
@@ -77,6 +87,11 @@ class RobotDef(object):
 
     self._set_dh_parms(dh_parms)
   
+  @property
+  def dh_convention(self): return self._dh_convention
+  
+  @property
+  def dyn_parms_order(self): return self._dyn_parms_order
   
   def __repr__(self) :
     return 'RobotDef instance: ' + self.name
@@ -167,11 +182,11 @@ class RobotDef(object):
     if len( dh_parms_list ) != self.dof:
       raise Exception('RobotDef.set_geometry(): provided number of links differ from robot dof (%d vs %d).' % ( len( dh_parms_list ), self.dof) )
       
-    self.dh_parms = []
+    self._dh_parms = []
 
-    self.links_sigma = [0]*self.dof
-    theta_index = self.dh_symbols.index(sympy.Symbol('theta',real=True))
-    d_index = self.dh_symbols.index(sympy.Symbol('d',real=True))
+    self._links_sigma = [0]*self.dof
+    theta_index = self._dh_symbols.index(sympy.Symbol('theta',real=True))
+    d_index = self._dh_symbols.index(sympy.Symbol('d',real=True))
     
     for i in range( self.dof ):
       
@@ -198,16 +213,16 @@ class RobotDef(object):
               temp[j] = sympy.sympify( temp[j] ).subs( {_joint_symb:_joint_i_symb(i+1)} )
               dh_parms_list[i] = tuple(temp)
             
-      self.dh_parms.append( dh_parms_list[i] )
+      self._dh_parms.append( dh_parms_list[i] )
       
       try:
         if dh_parms_list[i][ theta_index ].has( self.q[i] ):
-          self.links_sigma[i] = 0
+          self._links_sigma[i] = 0
           # print 'joint',i+1,'is revolute'
       except: pass
       try:
         if dh_parms_list[i][ d_index ].has( self.q[il] ):
-          self.links_sigma[i] = 1
+          self._links_sigma[i] = 1
           # print 'joint',il+1,'is prismatic'
       except: pass
       
@@ -217,7 +232,7 @@ class RobotDef(object):
   def dynparms( self, parm_order = None ):
     """Return list of RobotDef symbolic dynamic parameters."""
 
-    if not parm_order: parm_order = self.dyn_parms_order
+    if not parm_order: parm_order = self._dyn_parms_order
     parm_order = parm_order.lower()
  
     parms = []
