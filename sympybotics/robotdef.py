@@ -51,7 +51,7 @@ _modified_dh_transfmat = sympy.Matrix( [
 class RobotDef(object):
   """Class that generates and holds robot definitions and symbols."""
   
-  def __init__(self, name, dh_parms, dh_convention='standard', shortname=None):
+  def __init__(self, name, dh_parms, dh_convention, shortname=None):
     """
     Create RobotDef instance with data structures for robot geometry and symbols of robot dynamics.
     """

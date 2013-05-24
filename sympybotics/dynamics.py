@@ -49,11 +49,11 @@ def _rne_lie_forward(rbtdef, geom, ifunc=None):
   # Forward
   for i in range(rbtdef.dof):
 
-    V[i] =  _Adj( geom.Tdh_inv[i], V[i-1] )  +  geom.S[i] * rbtdef.dq[i]
+    V[i] =  ifunc(_Adj( geom.Tdh_inv[i], V[i-1] ))  +  ifunc(geom.S[i] * rbtdef.dq[i])
     V[i] = ifunc( V[i] )
 
-    dV[i] =  geom.S[i] * rbtdef.ddq[i]  +  _Adj( geom.Tdh_inv[i], dV[i-1] )  +  _adj(  _Adj( geom.Tdh_inv[i], V[i-1] ),  geom.S[i] * rbtdef.dq[i] )
-    dV[i] = ifunc( dV[i] )
+    dV[i] =  ifunc(geom.S[i] * rbtdef.ddq[i])  +  ifunc(_Adj( geom.Tdh_inv[i], dV[i-1] ))  +  ifunc(_adj(  ifunc(_Adj( geom.Tdh_inv[i], V[i-1] )),  ifunc(geom.S[i] * rbtdef.dq[i] )))
+    dV[i] = ifunc(dV[i])
 
   return V, dV
 
@@ -79,7 +79,6 @@ def _rne_lie_backward(rbtdef, geom, fw_results, ifunc=None):
     Llm = (rbtdef.L[i].row_join(_skew(rbtdef.l[i])) ).col_join( (-_skew( rbtdef.l[i]) ).row_join(sympy.eye(3)*rbtdef.m[i]))
 
     F[i] =  _Adjdual( Tdh_inv[i+1], F[i+1] )  +  Llm * dV[i]  -  _adjdual( V[i],  Llm * V[i] )
-
     F[i] = ifunc(F[i])
 
     tau[i] =  ifunc(( geom.S[i].transpose() *  F[i] )[0])
