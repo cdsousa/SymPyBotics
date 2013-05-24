@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
 name='sympybotics',
-version='0.3',
+version='0.3-git',
 author='Cristovao D. Sousa',
 author_email='crisjss@gmail.com',
 description='Robot dynamic symbolic model generator',
