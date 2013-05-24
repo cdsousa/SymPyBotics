@@ -18,22 +18,25 @@ Definition of a 2 DOF example robot:
 >>> pi = sympy.pi
 >>> q = sympybotics.robotdef.q
 >>> rbtdef = sympybotics.RobotDef('Example Robot', # robot name
-                              [ (-pi/2 ,0 , 0, q+pi/2 ),   # list of tuples with standard Denavit-Hartenberg parameters 
-                                ( pi/2 , 0, 0, q-pi/2 ) ], # (alpha, a, d, theta)
-                              'examprobot' # robot short name (optional)
-                             )
+...                           [ (-pi/2 ,0 , 0, q+pi/2 ),   # list of tuples with standard Denavit-Hartenberg parameters 
+...                             ( pi/2 , 0, 0, q-pi/2 ) ], # (alpha, a, d, theta)
+...                           dh_convention='standard', # either 'standard' or 'modified' (defaults to standard'
+...                           shortname='examprobot' # (optional)
+...                          )
 >>> rbtdef.frictionmodel = 'simple' # options are 'simple' and None, defaults to None
+
 ```
 
 ```Python
 >>> print(rbtdef.dynparms())
 [L_1xx, L_1xy, L_1xz, L_1yy, L_1yz, L_1zz, l_1x, l_1y, l_1z, m_1, fv_1, fc_1, L_2xx, L_2xy, L_2xz, L_2yy, L_2yz, L_2zz, l_2x, l_2y, l_2z, m_2, fv_2, fc_2]
+
 ```
 
 Generation of geometric, kinematic and dynamic models:
 
 ```Python
->>> rbt = sympybotics.RobotDynCode(rbtdef)
+>>> rbt = sympybotics.RobotDynCode(rbtdef, verbose=True)
 generating geometric model
 generating kinematic model
 generating tau code
@@ -43,14 +46,16 @@ generating inertia matrix code
 generating regressor matrix code
 generating friction term code
 done
+
 ```
 
 ```Python
->>> print(rbt.geom.T[-1])
+>>> print(rbt.geo.T[-1])
 [-sin(q1)*sin(q2), -cos(q1),  sin(q1)*cos(q2), 0]
 [ sin(q2)*cos(q1), -sin(q1), -cos(q1)*cos(q2), 0]
 [         cos(q2),        0,          sin(q2), 0]
 [               0,        0,                0, 1]
+
 ```
 
 ```Python
@@ -61,14 +66,18 @@ done
 [0, -cos(q1)]
 [0, -sin(q1)]
 [1,        0]
+
 ```
 
 C function generation:
 
 ```Python
 >>> tau_str = sympybotics.robotcodegen.dyn_code_to_func('C', rbt.tau_code, 'tau', 2, rbt.dof, rbtdef.dynparms())
->>> print(tau_str)
+
+
 ```
+Doing `print(tau_str)`, it will output
+
 ```C
 void tau( double* tau_out, const double* parms, const double* q, const double* dq, const double* ddq )
 {
@@ -100,8 +109,6 @@ Dynamic base parameters:
 
 ```Python
 >>> rbt.calc_base_parms()
-calculating base parameters and regressor code
-done
 >>> print(rbt.dyn.baseparms)
 [L_1yy + L_2zz]
 [         fv_1]
@@ -115,6 +122,7 @@ done
 [         l_2z]
 [         fv_2]
 [         fc_2]
+
 ```
 
 Author
@@ -134,4 +142,4 @@ From git source:
 License
 -------
 
-New BSD license. See LICENSE.txt
+New BSD license. See [License File](LICENSE.TXT)

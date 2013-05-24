@@ -51,7 +51,7 @@ _modified_dh_transfmat = sympy.Matrix( [
 class RobotDef(object):
   """Class that generates and holds robot definitions and symbols."""
   
-  def __init__(self, name, dh_parms, shortname=None, dh_convention='standard'):
+  def __init__(self, name, dh_parms, dh_convention='standard', shortname=None):
     """
     Create RobotDef instance with data structures for robot geometry and symbols of robot dynamics.
     """
@@ -71,6 +71,8 @@ class RobotDef(object):
     elif dh_convention in ['modified', 'mod', 'mdh']:
         self._dh_convention = 'modified'
         self._dh_transfmat = _modified_dh_transfmat
+    else:
+        raise ValueError("DH convention %s not known/implemented (use 'standard' or 'modified')"%dh_convention)
     
     self._dh_symbols = default_dh_symbols
     
@@ -221,7 +223,7 @@ class RobotDef(object):
           # print 'joint',i+1,'is revolute'
       except: pass
       try:
-        if dh_parms_list[i][ d_index ].has( self.q[il] ):
+        if dh_parms_list[i][ d_index ].has( self.q[i] ):
           self._links_sigma[i] = 1
           # print 'joint',il+1,'is prismatic'
       except: pass
