@@ -1,10 +1,12 @@
 SymPyBotics
 ===========
 
-Robot dynamic symbolic model generator
+Symbolic Framework for Modeling and Identification of Robot Dynamics
 
+Built on top of [Sympy](http://sympy.org) and [Numpy](http://www.numpy.org/) libraries.
 
-Depends on [SymCode](https://github.com/cdsousa/symcode).
+Also depends on [SymCode](https://github.com/cdsousa/symcode).
+(SymPyBotics [v0.3](https://github.com/cdsousa/sympybotics/tree/v0.3) depends on SymCode [v0.2](https://github.com/cdsousa/symcode/tree/v0.2))
 
 
 Example
@@ -75,7 +77,7 @@ C function generation:
 
 
 ```
-Doing `print(tau_str)`, it will output
+Doing `print(tau_str)`, function code will be output:
 
 ```C
 void tau( double* tau_out, const double* parms, const double* q, const double* dq, const double* ddq )
@@ -141,4 +143,4 @@ From git source:
 License
 -------
 
-New BSD license. See [License File](LICENSE.TXT)
+New BSD license. See [License File](LICENSE.txt)
