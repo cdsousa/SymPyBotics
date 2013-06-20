@@ -106,7 +106,7 @@ class RobotDynCode(object):
     
     H_se = symcode.subexprs.Subexprs()
     H_se._subexp_iv = self._H_se
-    self.Hb_code  = H_se.get(self.H_code[1]*self.dyn.Pb)
+    self.Hb_code  = H_se.get(self.dyn.regressor * self.dyn.Pb)
     
     self._codes.append('Hb_code')
     
