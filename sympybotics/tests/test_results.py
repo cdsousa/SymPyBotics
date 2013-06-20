@@ -48,12 +48,12 @@ def test_puma_dh_num_geo_kin_dyn():
     q = sympybotics.robotdef.q
 
     puma560_def = sympybotics.RobotDef('Puma 560 Robot',
-                            [ ( pi/2,      0,       0, q),
-                              (    0, 0.4318,       0, q),
-                              (-pi/2, 0.0203, 0.15005, q),
-                              ( pi/2,      0,  0.4318, q),
-                              (-pi/2,      0,       0, q),
-                              (    0,      0,       0, q)],
+                            [ (   pi/2,        0,         0,   q),
+                              (      0,   0.4318,         0,   q),
+                              ('-pi/2', '0.0203', '0.15005', 'q'),   # test sympify
+                              (   pi/2,        0,    0.4318,   q),
+                              (  -pi/2,        0,         0,   q),
+                              (      0,        0,         0,   q)],
                             dh_convention = 'standard',
                           )
 

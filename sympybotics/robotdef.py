@@ -195,35 +195,26 @@ class RobotDef(object):
       if len( dh_parms_list[i] ) != 4:
         raise Exception('RobotDef.set_dh_parms: wrong number of Denavit-Hartenberg parameters (must be 4 per link).' )
 
-      for j,p in enumerate(dh_parms_list[i]):
-
-        for v in sympy.sympify(p).free_symbols:
+      link_dh_parms = []
+      for p in dh_parms_list[i]:
           
-          v=str(v)
-          if v[0] == str(_joint_symb):
-            
-            if len(v) > 1:
-              try:
-                num = int(v[1:])
-              except:
-                num = 1
-              if num <= 0 or num > self.dof:
-                raise Exception("RobotDef.set_dh_parms: Joint position symbol \'%s\' out of robot joint range (from 1 to %d)!" % (v,self.dof))
+          p = sympy.sympify(p)
 
-            else:
-              temp = list(dh_parms_list[i])
-              temp[j] = sympy.sympify( temp[j] ).subs( {_joint_symb:_joint_i_symb(i+1)} )
-              dh_parms_list[i] = tuple(temp)
-            
-      self._dh_parms.append( dh_parms_list[i] )
+          for s in p.free_symbols:
+              if str(s) == str(_joint_symb):
+                  p = p.subs(s, _joint_i_symb(i+1))
+        
+          link_dh_parms.append(p)
+              
+      self._dh_parms.append(tuple(link_dh_parms))
       
       try:
-        if dh_parms_list[i][ theta_index ].has( self.q[i] ):
+        if self._dh_parms[i][ theta_index ].has( self.q[i] ):
           self._links_sigma[i] = 0
           # print 'joint',i+1,'is revolute'
       except: pass
       try:
-        if dh_parms_list[i][ d_index ].has( self.q[i] ):
+        if self._dh_parms[i][ d_index ].has( self.q[i] ):
           self._links_sigma[i] = 1
           # print 'joint',il+1,'is prismatic'
       except: pass
