@@ -1,0 +1,12 @@
+language: python
+python:
+  - "2.7"
+before_install:
+  - pip install sympy --use-mirrors
+  - pip install numpy --use-mirrors
+install:
+  - python setup.py install
+before_script:
+  - cd sympybotics
+script:
+  - ../run_tests.sh
