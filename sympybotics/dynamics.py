@@ -5,8 +5,6 @@ import numpy
 
 from . import robotdef
 from . import geometry
-import symcode
-
 
 def _skew(v):
   return sympy.Matrix( [ [     0, -v[2],  v[1] ],
