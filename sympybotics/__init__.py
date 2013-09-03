@@ -2,7 +2,7 @@
 
 __version__ = '0.3-git'
 
-from .robotdef import RobotDef
+from .robotdef import RobotDef, q
 from . import geometry
 from . import kinematics
 from . import dynamics
@@ -10,5 +10,3 @@ from . import robotcodegen
 from .robotmodel import RobotAllSymb, RobotDynCode
 #from . import tools
 #from . import regression
-
-__all__ = ['Robotdef', 'geometry', 'kinematics', 'dynamics', 'robotcodegen', 'RobotAllSymb', 'RobotDynCode']

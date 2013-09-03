@@ -5,8 +5,6 @@ Symbolic Framework for Modeling and Identification of Robot Dynamics
 
 Built on top of [Sympy](http://sympy.org) and [Numpy](http://www.numpy.org/) libraries.
 
-Also depends on [SymCode](https://github.com/cdsousa/symcode).
-(SymPyBotics [v0.3](https://github.com/cdsousa/sympybotics/tree/v0.3) depends on SymCode [v0.2](https://github.com/cdsousa/symcode/tree/v0.2))
 
 
 Example
@@ -18,7 +16,7 @@ Definition of a 2 DOF example robot:
 >>> import sympy
 >>> import sympybotics
 >>> rbtdef = sympybotics.RobotDef('Example Robot', # robot name
-...                               [('-pi/2', 0, 0, 'q+pi/2'),  # list of tuples with Denavit-Hartenberg parameters 
+...                               [('-pi/2', 0, 0, 'q+pi/2'),  # list of tuples with Denavit-Hartenberg parameters
 ...                                ( 'pi/2', 0, 0, 'q-pi/2')], # (alpha, a, d, theta)
 ...                               dh_convention='standard' # either 'standard' or 'modified'
 ...                              )
@@ -27,7 +25,7 @@ Definition of a 2 DOF example robot:
 ```
 
 ```Python
->>> print(rbtdef.dynparms())
+>>> rbtdef.dynparms()
 [L_1xx, L_1xy, L_1xz, L_1yy, L_1yz, L_1zz, l_1x, l_1y, l_1z, m_1, fv_1, fc_1, L_2xx, L_2xy, L_2xz, L_2yy, L_2yz, L_2zz, l_2x, l_2y, l_2z, m_2, fv_2, fc_2]
 
 ```
@@ -49,22 +47,24 @@ done
 ```
 
 ```Python
->>> print(rbt.geo.T[-1])
-[-sin(q1)*sin(q2), -cos(q1),  sin(q1)*cos(q2), 0]
-[ sin(q2)*cos(q1), -sin(q1), -cos(q1)*cos(q2), 0]
-[         cos(q2),        0,          sin(q2), 0]
-[               0,        0,                0, 1]
+>>> rbt.geo.T[-1]
+Matrix([
+[-sin(q1)*sin(q2), -cos(q1),  sin(q1)*cos(q2), 0],
+[ sin(q2)*cos(q1), -sin(q1), -cos(q1)*cos(q2), 0],
+[         cos(q2),        0,          sin(q2), 0],
+[               0,        0,                0, 1]])
 
 ```
 
 ```Python
->>> print(rbt.kin.J[-1])
-[0,        0]
-[0,        0]
-[0,        0]
-[0, -cos(q1)]
-[0, -sin(q1)]
-[1,        0]
+>>> rbt.kin.J[-1]
+Matrix([
+[0,        0],
+[0,        0],
+[0,        0],
+[0, -cos(q1)],
+[0, -sin(q1)],
+[1,        0]])
 
 ```
 
@@ -108,19 +108,20 @@ Dynamic base parameters:
 
 ```Python
 >>> rbt.calc_base_parms()
->>> print(rbt.dyn.baseparms)
-[L_1yy + L_2zz]
-[         fv_1]
-[         fc_1]
-[L_2xx - L_2zz]
-[        L_2xy]
-[        L_2xz]
-[        L_2yy]
-[        L_2yz]
-[         l_2x]
-[         l_2z]
-[         fv_2]
-[         fc_2]
+>>> rbt.dyn.baseparms
+Matrix([
+[L_1yy + L_2zz],
+[         fv_1],
+[         fc_1],
+[L_2xx - L_2zz],
+[        L_2xy],
+[        L_2xz],
+[        L_2yy],
+[        L_2yz],
+[         l_2x],
+[         l_2z],
+[         fv_2],
+[         fc_2]])
 
 ```
 
