@@ -1,7 +1,22 @@
+
+class NotAvailableError(Exception):
+    def __init__(self, function_name):
+        msg = 'Function %s not available since cvxopt package '\
+              'was not found' % function_name
+        Exception.__init__(self, msg)
+
+try:
+    import cvxopt
+except ImportError:
+    cvxopt = None
+else:
+    import cvxopt
+    import cvxopt.solvers
+
+
 import numpy
 import sympy
-import cvxopt
-import cvxopt.solvers
+
 
 def mrepl(m,repl):
   return m.applyfunc(lambda x: x.xreplace(repl))
@@ -51,26 +66,26 @@ def prepare_sdp( var_symbs, LMI_matrix, split_diag_blocks=True):
     vn = len(v)
 
     if isinstance( LMI_matrix, list ) or isinstance( LMI_matrix, tuple ):
-      
+
       blocks_LMI_matrix = LMI_matrix
-      
+
     else:
-      
+
       if split_diag_blocks:
-        
+
           blocks = get_diag_blocks(LMI_matrix)
           blocks_LMI_matrix = []
           for a,b in zip( [0]+blocks[:-1] , blocks ):
               blocks_LMI_matrix.append( LMI_matrix[ a:b, a:b ] )
           print('Split into %d diagonal blocks.'%(len(blocks)))
-          
+
       else:
-        
+
           blocks_LMI_matrix = [ LMI_matrix ]
 
 
     blocks_Fi = []
-    
+
     zero_subs = dict(zip(v,[0]*vn))
 
     for LMI_matrix in blocks_LMI_matrix:
@@ -90,6 +105,8 @@ def prepare_sdp( var_symbs, LMI_matrix, split_diag_blocks=True):
 
 
 def sdp( c, Ai_blocks, primalstar=None, dualstart=None, solver='dsdp', verbose=0, interpret=False, maxiters=1000, tolerance=10e-7 ):
+  if cvxopt is None:
+    raise NotAvailableError(sdp.__name__)
 
 
   c = cvxopt.matrix( c )
@@ -105,7 +122,7 @@ def sdp( c, Ai_blocks, primalstar=None, dualstart=None, solver='dsdp', verbose=0
       raise Exception('error: unknown solver (available: dsdp or conelp)')
 
   if solver == 'conelp': solver == ''
-  
+
   cvxopt.solvers.options['show_progress'] = (1 if verbose > 0 else 0) #True/False (default: True)
   cvxopt.solvers.options['maxiters'] = maxiters #positive integer (default: 100)
   # cvxopt.solvers.options['refinement'] #positive integer (default: 1)
