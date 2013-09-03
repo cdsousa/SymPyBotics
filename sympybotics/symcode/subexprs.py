@@ -1,6 +1,7 @@
 import sympy
 import sympy.utilities
-from sympy.simplify.cse_main import cse_optimizations, preprocess_for_cse, postprocess_for_cse
+from sympy.simplify.cse_main import cse_optimizations, preprocess_for_cse, \
+    postprocess_for_cse
 
 import collections
 
@@ -16,26 +17,29 @@ class Subexprs(object):
         self._optimizations = optimizations
         self._postprocess = postprocess
 
-        self._tmp_symbols = sympy.utilities.iterables.numbered_symbols('tmp', start=0, real=True)
+        self._tmp_symbols = sympy.utilities.iterables.numbered_symbols(
+            'tmp', start=0, real=True)
 
         self._subexp_iv = dict()
         self._commutatives = dict()
 
-
     class _ordered_len(object):
+
         def __init__(self):
             self.lenidxs = [0]
+
         def insert(self, list, item):
             l = len(item)
             over = l - (len(self.lenidxs) - 1)
             if over > 0:
-                self.lenidxs.extend([self.lenidxs[-1]]*over)
+                self.lenidxs.extend([self.lenidxs[-1]] * over)
             list.insert(self.lenidxs[l], item)
-            for j in range(l,len(self.lenidxs)):
+            for j in range(l, len(self.lenidxs)):
                 self.lenidxs[j] += 1
+
         def pop(self, list, index):
             l = len(list.pop(index))
-            for j in range(l,len(self.lenidxs)):
+            for j in range(l, len(self.lenidxs)):
                 self.lenidxs[j] -= 1
 
     def _parse_commutative(self, expr):
@@ -74,7 +78,8 @@ class Subexprs(object):
                 diff_args_input = args_input.difference(com)
                 diff_args_other = args_other.difference(com)
 
-                if not diff_args_input: # args_input is strict subset of args_other
+                if not diff_args_input:
+                    # args_input is strict subset of args_other
 
                     ivar = next(self._tmp_symbols)
                     self._subexp_iv[exprtype(*args_input)] = ivar
@@ -82,13 +87,15 @@ class Subexprs(object):
 
                     args_other = diff_args_other
                     args_other.add(ivar)
-                    self._subexp_iv[exprtype(*args_other)] = self._subexp_iv.pop(exprtype(*argsets[i]))
+                    self._subexp_iv[exprtype(*args_other)] = \
+                        self._subexp_iv.pop(exprtype(*argsets[i]))
                     args_to_remove.append(i)
                     args_to_insert.append(args_other)
 
                     break
 
-                elif not diff_args_other: # args_other is strict subset of args_input
+                elif not diff_args_other:
+                    # args_other is strict subset of args_input
 
                     args_input = diff_args_input
                     args_input.add(self._subexp_iv[exprtype(*args_other)])
@@ -98,15 +105,16 @@ class Subexprs(object):
                     if ivar or len(args_input) == 2:
                         break
 
-                else: # args_input != com != args_other
+                else:  # args_input != com != args_other
 
                     ivar_com = next(self._tmp_symbols)
                     self._subexp_iv[exprtype(*com)] = ivar_com
-                    args_to_insert.append(com) #argsets.append(com)
+                    args_to_insert.append(com)  # argsets.append(com)
 
                     args_other = diff_args_other
                     args_other.add(ivar_com)
-                    self._subexp_iv[exprtype(*args_other)] = self._subexp_iv.pop(exprtype(*argsets[i]))
+                    self._subexp_iv[exprtype(*args_other)] = \
+                        self._subexp_iv.pop(exprtype(*argsets[i]))
                     args_to_remove.append(i)
                     args_to_insert.append(args_other)
 
@@ -149,17 +157,18 @@ class Subexprs(object):
             self._subexp_iv[subexpr] = ivar
             return ivar
 
-
     def collect(self, exprs):
 
-        if isinstance(exprs, sympy.Basic): # if only one expression is passed
+        if isinstance(exprs, sympy.Basic):  # if only one expression is passed
             exprs = [exprs]
             is_single_expr = True
         else:
             is_single_expr = False
 
-        # Preprocess the expressions to give us better optimization opportunities.
-        prep_exprs = [preprocess_for_cse(e, self._optimizations) for e in exprs]
+        # Preprocess the expressions to give us better optimization
+        # opportunities.
+        prep_exprs = [preprocess_for_cse(e, self._optimizations)
+                      for e in exprs]
 
         out_exprs = map(self._parse, prep_exprs)
 
@@ -170,22 +179,21 @@ class Subexprs(object):
         else:
             return out_exprs
 
-
     def get(self, exprs=None, symbols=None):
 
         if symbols is None:
             symbols = sympy.utilities.iterables.numbered_symbols()
         else:
-            # In case we get passed an iterable with an __iter__ method instead of
-            # an actual iterator.
+            # In case we get passed an iterable with an __iter__ method
+            # instead of an actual iterator.
             symbols = iter(symbols)
 
-        if isinstance(exprs, sympy.Basic): # if only one expression is passed
+        if isinstance(exprs, sympy.Basic):  # if only one expression is passed
             exprs = [exprs]
 
         # Find all of the repeated subexpressions.
 
-        ivar_se = {iv:se for se,iv in self._subexp_iv.iteritems()}
+        ivar_se = {iv: se for se, iv in self._subexp_iv.iteritems()}
 
         used_ivs = set()
         repeated = set()
@@ -214,7 +222,7 @@ class Subexprs(object):
 
         def _get_subexprs(args):
             args = list(args)
-            for i,symb in enumerate(args):
+            for i, symb in enumerate(args):
                 if symb in ivar_se:
                     if symb in tmpivs_ivs:
                         args[i] = tmpivs_ivs[symb]
@@ -232,13 +240,15 @@ class Subexprs(object):
 
         out_exprs = _get_subexprs(exprs)
 
-        # Postprocess the expressions to return the expressions to canonical form.
+        # Postprocess the expressions to return the expressions to canonical
+        # form.
         ordered_iv_se_notopt = ordered_iv_se
         ordered_iv_se = collections.OrderedDict()
         for i, (ivar, subexpr) in enumerate(ordered_iv_se_notopt.items()):
             subexpr = postprocess_for_cse(subexpr, self._optimizations)
             ordered_iv_se[ivar] = subexpr
-        out_exprs = [postprocess_for_cse(e, self._optimizations) for e in out_exprs]
+        out_exprs = [postprocess_for_cse(e, self._optimizations)
+                     for e in out_exprs]
 
         if isinstance(exprs, sympy.Matrix):
             out_exprs = sympy.Matrix(exprs.rows, exprs.cols, out_exprs)
@@ -247,18 +257,9 @@ class Subexprs(object):
         return self._postprocess(ordered_iv_se.items(), out_exprs)
 
 
-
 def fast_cse(exprs, symbols='aux'):
     se = Subexprs()
     return se.get(se.collect(exprs))
-
-
-
-
-
-
-
-
 
 
 class WholeSubexprs(object):
@@ -270,12 +271,11 @@ class WholeSubexprs(object):
 
     def collect(self, exprs):
 
-        if isinstance(exprs, sympy.Basic): # if only one expression is passed
+        if isinstance(exprs, sympy.Basic):  # if only one expression is passed
             exprs = [exprs]
             is_single_expr = True
         else:
             is_single_expr = False
-
 
         out_exprs = []
         for expr in exprs:
@@ -283,7 +283,7 @@ class WholeSubexprs(object):
                 out_exprs.append(expr)
             else:
                 iv = next(self._tmp_symbols)
-                self._subexp_iv.append((iv,expr))
+                self._subexp_iv.append((iv, expr))
                 out_exprs.append(iv)
 
         if is_single_expr:
@@ -295,6 +295,3 @@ class WholeSubexprs(object):
 
     def get(self, exprs=None, symbols=None):
         return self._subexp_iv, exprs
-
-
-
