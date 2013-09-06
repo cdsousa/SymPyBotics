@@ -137,10 +137,10 @@ class RobotDef(object):
         # ]
         self.q = sympy.Matrix([[_new_sym('q' + str(i + 1))]
                               for i in range(self.dof)])
-        self.dq = sympy.Matrix([[_new_sym('dq' + str(i + 1))]
+        self.dq = sympy.Matrix([[_new_sym(r'\dot{q}_' + str(i + 1))]
                                for i in range(self.dof)])
         self.ddq = sympy.Matrix(
-            [[_new_sym('ddq' + str(i + 1))] for i in range(self.dof)])
+            [[_new_sym(r'\ddot{q}_' + str(i + 1))] for i in range(self.dof)])
 
         m = self.m = list(range(self.dof))
         l = self.l = list(range(self.dof))
@@ -193,13 +193,13 @@ class RobotDef(object):
                 dict_l2mr[l[i][elem]] = m[i] * r[i][elem]
                 dict_r2lm[r[i][elem]] = l[i][elem] / m[i]
 
-            self.latex_symbols = {}
+            self.non_latex_symbols = {}
             for i in range(self.dof):
-                self.latex_symbols[self.q[i]] = r'q_{' + str(i + 1) + '}'
-                self.latex_symbols[
-                    self.dq[i]] = r'\dot{q}_{' + str(i + 1) + '}'
-                self.latex_symbols[
-                    self.ddq[i]] = r'\ddot{q}_{' + str(i + 1) + '}'
+                self.non_latex_symbols[self.q[i]] = r'q' + str(i + 1)
+                self.non_latex_symbols[
+                    self.dq[i]] = r'dq' + str(i + 1)
+                self.non_latex_symbols[
+                    self.ddq[i]] = r'ddq' + str(i + 1)
 
         return self
 

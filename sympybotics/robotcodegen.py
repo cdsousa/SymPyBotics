@@ -7,8 +7,8 @@ from . import symcode
 def _gen_q_dq_ddq_subs(dof):
     subs = {}
     for i in reversed(range(dof)):
-        subs[sympy.Symbol('ddq' + str(i + 1))] = 'ddq[' + str(i) + ']'
-        subs[sympy.Symbol('dq' + str(i + 1))] = 'dq[' + str(i) + ']'
+        subs[sympy.Symbol(r'\ddot{q}_' + str(i + 1))] = 'ddq[' + str(i) + ']'
+        subs[sympy.Symbol(r'\dot{q}_' + str(i + 1))] = 'dq[' + str(i) + ']'
         subs[sympy.Symbol('q' + str(i + 1))] = 'q[' + str(i) + ']'
     return subs
 
