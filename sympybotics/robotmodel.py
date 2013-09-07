@@ -2,11 +2,10 @@
 import sys
 import numpy
 
-from . import geometry
-from . import kinematics
-from . import dynamics
-from . import symcode
-
+from .geometry import Geometry
+from .kinematics import Kinematics
+from .dynamics import Dynamics
+from .symcode import Subexprs, code_to_func
 
 def _fprint(x):
     print(x)
@@ -24,10 +23,10 @@ class RobotAllSymb(object):
         self.rbtdef = rbtdef
         self.dof = rbtdef.dof
 
-        self.geo = geometry.Geometry(self.rbtdef)
-        self.kin = kinematics.Kinematics(self.rbtdef, self.geo)
+        self.geo = Geometry(self.rbtdef)
+        self.kin = Kinematics(self.rbtdef, self.geo)
 
-        self.dyn = dynamics.Dynamics(self.rbtdef, self.geo)
+        self.dyn = Dynamics(self.rbtdef, self.geo)
         self.dyn.gen_all()
 
 
@@ -46,35 +45,35 @@ class RobotDynCode(object):
         self.dof = rbtdef.dof
 
         p('generating geometric model')
-        self.geo = geometry.Geometry(self.rbtdef)
+        self.geo = Geometry(self.rbtdef)
 
         p('generating kinematic model')
-        self.kin = kinematics.Kinematics(self.rbtdef, self.geo)
+        self.kin = Kinematics(self.rbtdef, self.geo)
 
-        self.dyn = dynamics.Dynamics(self.rbtdef, self.geo)
+        self.dyn = Dynamics(self.rbtdef, self.geo)
 
         p('generating tau code')
-        tau_se = symcode.subexprs.Subexprs()
+        tau_se = Subexprs()
         self.dyn.gen_tau(tau_se.collect)
         self.tau_code = tau_se.get(self.dyn.tau)
 
         p('generating gravity term code')
-        g_se = symcode.subexprs.Subexprs()
+        g_se = Subexprs()
         self.dyn.gen_gravityterm(g_se.collect)
         self.g_code = g_se.get(self.dyn.gravityterm)
 
         p('generating coriolis term code')
-        c_se = symcode.subexprs.Subexprs()
+        c_se = Subexprs()
         self.dyn.gen_coriolisterm(c_se.collect)
         self.c_code = c_se.get(self.dyn.coriolisterm)
 
         p('generating inertia matrix code')
-        M_se = symcode.subexprs.Subexprs()
+        M_se = Subexprs()
         self.dyn.gen_inertiamatrix(M_se.collect)
         self.M_code = M_se.get(self.dyn.inertiamatrix)
 
         p('generating regressor matrix code')
-        H_se = symcode.subexprs.Subexprs()
+        H_se = Subexprs()
         self.dyn.gen_regressor(H_se.collect)
         self.H_code = H_se.get(self.dyn.regressor)
         self._H_se = H_se._subexp_iv
@@ -83,7 +82,7 @@ class RobotDynCode(object):
 
         if self.rbtdef.frictionmodel is not None:
             p('generating friction term code')
-            f_se = symcode.subexprs.Subexprs()
+            f_se = Subexprs()
             self.dyn.gen_frictionterm(f_se.collect)
             self.f_code = f_se.get(self.dyn.frictionterm)
             self._codes.append('f_code')
@@ -97,7 +96,7 @@ class RobotDynCode(object):
             {dq: 'dq[%d]' % i for i, dq in enumerate(self.rbtdef.dq)})
         q_subs.update(
             {ddq: 'ddq[%d]' % i for i, ddq in enumerate(self.rbtdef.ddq)})
-        func_def_regressor = symcode.generation.code_to_func(
+        func_def_regressor = code_to_func(
             'python', self.H_code, 'regressor_func', ['q', 'dq', 'ddq'],
             q_subs)
         global sin, cos, sign
@@ -111,7 +110,7 @@ class RobotDynCode(object):
 
         self.dyn.calc_base_parms(regressor_func)
 
-        H_se = symcode.subexprs.Subexprs()
+        H_se = Subexprs()
         H_se._subexp_iv = self._H_se
         self.Hb_code = H_se.get(self.dyn.regressor * self.dyn.Pb)
 

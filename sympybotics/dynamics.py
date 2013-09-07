@@ -3,7 +3,7 @@ import copy
 import sympy
 import numpy
 
-from . import geometry
+from .geometry import Geometry
 
 
 def _skew(v):
@@ -267,7 +267,7 @@ def _gen_gravityterm_rne(rbtdef, geom, ifunc=None):
     rbtdeftmp = copy.deepcopy(rbtdef)
     rbtdeftmp.dq = sympy.zeros((rbtdeftmp.dof, 1))
     rbtdeftmp.ddq = sympy.zeros((rbtdeftmp.dof, 1))
-    geomtmp = geometry.Geometry(rbtdeftmp)
+    geomtmp = Geometry(rbtdeftmp)
     return _rne(rbtdeftmp, geomtmp, ifunc)
 
 
@@ -278,7 +278,7 @@ def _gen_coriolisterm_rne(rbtdef, geom, ifunc=None):
     rbtdeftmp = copy.deepcopy(rbtdef)
     rbtdeftmp.gravity = sympy.zeros((3, 1))
     rbtdeftmp.ddq = sympy.zeros((rbtdeftmp.dof, 1))
-    geomtmp = geometry.Geometry(rbtdeftmp)
+    geomtmp = Geometry(rbtdeftmp)
     return _rne(rbtdeftmp, geomtmp, ifunc)
 
 
@@ -297,7 +297,7 @@ def _gen_inertiamatrix_rne(rbtdef, geom, ifunc=None):
     for i in range(M.rows):
         rbtdeftmp.ddq = sympy.zeros((rbtdeftmp.dof, 1))
         rbtdeftmp.ddq[i] = 1
-        geomtmp = geometry.Geometry(rbtdeftmp)
+        geomtmp = Geometry(rbtdeftmp)
 
         fw_results = _rne_forward(rbtdeftmp, geomtmp, ifunc)
         Mcoli = _rne_backward(rbtdeftmp, geomtmp, fw_results, ifunc=ifunc)

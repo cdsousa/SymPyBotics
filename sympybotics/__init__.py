@@ -3,8 +3,8 @@
 __version__ = '0.3-git'
 
 from .robotdef import RobotDef, q
-from . import geometry
-from . import kinematics
-from . import dynamics
-from . import robotcodegen
+from .geometry import Geometry
+from .kinematics import Kinematics
+from .dynamics import Dynamics
+from .robotcodegen import dyn_code_to_func
 from .robotmodel import RobotAllSymb, RobotDynCode
