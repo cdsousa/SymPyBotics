@@ -12,15 +12,9 @@ def _elements_to_tensor(elems):
                          [elems[2], elems[4], elems[5]]])
 
 
-class _elementslist_to_tensorlist():
+def _elementslist_to_tensorlist(elementslist):
 
-    def __init__(self, elementslist):
-        self.l = elementslist
-
-    def __getitem__(self, i):
-        return sympy.Matrix([[self.l[i][0], self.l[i][1], self.l[i][2]],
-                             [self.l[i][1], self.l[i][3], self.l[i][4]],
-                             [self.l[i][2], self.l[i][4], self.l[i][5]]])
+    return [_elements_to_tensor(elems) for elems in elementslist]
 
 
 def _sym_skew(v):
@@ -114,7 +108,7 @@ class RobotDef(object):
     def dh_parms(self):
         return self._dh_parms
 
-    def __repr__(self):
+    def __str__(self):
         return 'RobotDef instance: ' + self.name
 
     @property
@@ -142,27 +136,23 @@ class RobotDef(object):
         self.ddq = sympy.Matrix(
             [[_new_sym(r'\ddot{q}_' + str(i + 1))] for i in range(self.dof)])
 
+        self.non_latex_symbols = {}
+        for i in range(self.dof):
+            self.non_latex_symbols[self.q[i]] = r'q' + str(i + 1)
+            self.non_latex_symbols[
+                self.dq[i]] = r'dq' + str(i + 1)
+            self.non_latex_symbols[
+                self.ddq[i]] = r'ddq' + str(i + 1)
+
         m = self.m = list(range(self.dof))
         l = self.l = list(range(self.dof))
         Le = self.Le = list(range(self.dof))
 
-        L = self.L
-
         r = self.r = list(range(self.dof))
         Ie = self.Ie = list(range(self.dof))
 
-        I = self.I
-
         fv = self.fv = list(range(self.dof))
         fc = self.fc = list(range(self.dof))
-
-        I_funcof_L = self.I_funcof_L = list(range(self.dof))
-        L_funcof_I = self.L_funcof_I = list(range(self.dof))
-
-        dict_I2Lexp = self.dict_I2Lexp = dict()
-        dict_L2Iexp = self.dict_L2Iexp = dict()
-        dict_l2mr = self.dict_l2mr = dict()
-        dict_r2lm = self.dict_r2lm = dict()
 
         for i in range(dof):
 
@@ -180,6 +170,19 @@ class RobotDef(object):
             fv[i] = _new_sym('fv_' + str(i + 1))
             fc[i] = _new_sym('fc_' + str(i + 1))
 
+        I = self.I
+        L = self.L
+
+        I_funcof_L = self.I_funcof_L = list(range(self.dof))
+        L_funcof_I = self.L_funcof_I = list(range(self.dof))
+
+        dict_I2Lexp = self.dict_I2Lexp = dict()
+        dict_L2Iexp = self.dict_L2Iexp = dict()
+        dict_l2mr = self.dict_l2mr = dict()
+        dict_r2lm = self.dict_r2lm = dict()
+
+        for i in range(dof):
+
             L_funcof_I[i] = I[i] + m[i] * _sym_skew(r[i]).T * _sym_skew(r[i])
             I_funcof_L[i] = L[i] - m[i] * _sym_skew(r[i]).T * _sym_skew(r[i])
 
@@ -192,14 +195,6 @@ class RobotDef(object):
             for elem in range(3):
                 dict_l2mr[l[i][elem]] = m[i] * r[i][elem]
                 dict_r2lm[r[i][elem]] = l[i][elem] / m[i]
-
-            self.non_latex_symbols = {}
-            for i in range(self.dof):
-                self.non_latex_symbols[self.q[i]] = r'q' + str(i + 1)
-                self.non_latex_symbols[
-                    self.dq[i]] = r'dq' + str(i + 1)
-                self.non_latex_symbols[
-                    self.ddq[i]] = r'ddq' + str(i + 1)
 
         return self
 
