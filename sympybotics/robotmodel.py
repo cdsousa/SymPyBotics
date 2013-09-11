@@ -52,39 +52,39 @@ class RobotDynCode(object):
 
         self.dyn = Dynamics(self.rbtdef, self.geo)
 
-        p('generating tau code')
-        tau_se = Subexprs()
-        self.dyn.gen_tau(tau_se.collect)
-        self.tau_code = tau_se.get(self.dyn.tau)
+        p('generating invdyn code')
+        invdyn_se = Subexprs()
+        self.dyn.gen_invdyn(invdyn_se.collect)
+        self.invdyn_code = invdyn_se.get(self.dyn.invdyn)
 
         p('generating gravity term code')
         g_se = Subexprs()
         self.dyn.gen_gravityterm(g_se.collect)
-        self.g_code = g_se.get(self.dyn.gravityterm)
+        self.g_code = g_se.get(self.dyn.g)
 
         p('generating coriolis term code')
         c_se = Subexprs()
         self.dyn.gen_coriolisterm(c_se.collect)
-        self.c_code = c_se.get(self.dyn.coriolisterm)
+        self.c_code = c_se.get(self.dyn.c)
 
         p('generating inertia matrix code')
         M_se = Subexprs()
         self.dyn.gen_inertiamatrix(M_se.collect)
-        self.M_code = M_se.get(self.dyn.inertiamatrix)
+        self.M_code = M_se.get(self.dyn.M)
 
         p('generating regressor matrix code')
         H_se = Subexprs()
         self.dyn.gen_regressor(H_se.collect)
-        self.H_code = H_se.get(self.dyn.regressor)
+        self.H_code = H_se.get(self.dyn.H)
         self._H_se = H_se._subexp_iv
 
-        self._codes = ['tau_code', 'g_code', 'c_code', 'M_code', 'H_code']
+        self._codes = ['invdyn_code', 'g_code', 'c_code', 'M_code', 'H_code']
 
         if self.rbtdef.frictionmodel is not None:
             p('generating friction term code')
             f_se = Subexprs()
             self.dyn.gen_frictionterm(f_se.collect)
-            self.f_code = f_se.get(self.dyn.frictionterm)
+            self.f_code = f_se.get(self.dyn.f)
             self._codes.append('f_code')
 
         p('done')
@@ -112,7 +112,7 @@ class RobotDynCode(object):
 
         H_se = Subexprs()
         H_se._subexp_iv = self._H_se
-        self.Hb_code = H_se.get(self.dyn.regressor * self.dyn.Pb)
+        self.Hb_code = H_se.get(self.dyn.H * self.dyn.Pb)
 
         self._codes.append('Hb_code')
 

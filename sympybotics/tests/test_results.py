@@ -116,7 +116,7 @@ def test_puma_dh_num_geo_kin_dyn():
         'python', puma560.g_code, 'g_puma560', 0, puma560.dof,
         puma560.dyn.dynparms)
     tau_func_def = sympybotics.robotcodegen.dyn_code_to_func(
-        'python', puma560.tau_code, 'tau_puma560', 2, puma560.dof,
+        'python', puma560.invdyn_code, 'tau_puma560', 2, puma560.dof,
         puma560.dyn.dynparms)
     H_func_def = sympybotics.robotcodegen.dyn_code_to_func(
         'python', puma560.H_code, 'H_puma560', 2, puma560.dof)
@@ -302,7 +302,7 @@ def test_puma_mdh_num_geo_kin_dyn():
         'python', puma560.g_code, 'g_puma560', 0, puma560.dof,
         puma560.dyn.dynparms)
     tau_func_def = sympybotics.robotcodegen.dyn_code_to_func(
-        'python', puma560.tau_code, 'tau_puma560', 2, puma560.dof,
+        'python', puma560.invdyn_code, 'tau_puma560', 2, puma560.dof,
         puma560.dyn.dynparms)
     H_func_def = sympybotics.robotcodegen.dyn_code_to_func(
         'python', puma560.H_code, 'H_puma560', 2, puma560.dof)

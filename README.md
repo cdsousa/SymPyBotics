@@ -3,9 +3,9 @@ SymPyBotics
 
 Symbolic Framework for Modeling and Identification of Robot Dynamics
 
-Built on top of [Sympy](http://sympy.org) and [Numpy](http://www.numpy.org/) libraries.
+Uses [Sympy](http://sympy.org) and [Numpy](http://www.numpy.org/) libraries.
 
-
+[![Build Status](https://travis-ci.org/cdsousa/sympybotics.png?branch=master)](https://travis-ci.org/cdsousa/sympybotics)
 
 Example
 -------
@@ -36,7 +36,7 @@ Generation of geometric, kinematic and dynamic models:
 >>> rbt = sympybotics.RobotDynCode(rbtdef, verbose=True)
 generating geometric model
 generating kinematic model
-generating tau code
+generating invdyn code
 generating gravity term code
 generating coriolis term code
 generating inertia matrix code
@@ -71,7 +71,7 @@ Matrix([
 C function generation:
 
 ```Python
->>> tau_str = sympybotics.robotcodegen.dyn_code_to_func('C', rbt.tau_code, 'tau', 2, rbt.dof, rbtdef.dynparms())
+>>> tau_str = sympybotics.robotcodegen.dyn_code_to_func('C', rbt.invdyn_code, 'tau', 2, rbt.dof, rbtdef.dynparms())
 
 
 ```

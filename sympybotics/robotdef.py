@@ -1,6 +1,8 @@
 
 import sympy
 
+from .utils import sym_skew as skew
+
 
 def _new_sym(name):
     return sympy.symbols(name, real=True)
@@ -17,10 +19,6 @@ def _elementslist_to_tensorlist(elementslist):
     return [_elements_to_tensor(elems) for elems in elementslist]
 
 
-def _sym_skew(v):
-    return sympy.Matrix([[0, -v[2],  v[1]],
-                         [v[2],     0, -v[0]],
-                         [-v[1],  v[0],     0]])
 
 _joint_symb = _new_sym('q')
 
@@ -183,8 +181,8 @@ class RobotDef(object):
 
         for i in range(dof):
 
-            L_funcof_I[i] = I[i] + m[i] * _sym_skew(r[i]).T * _sym_skew(r[i])
-            I_funcof_L[i] = L[i] - m[i] * _sym_skew(r[i]).T * _sym_skew(r[i])
+            L_funcof_I[i] = I[i] + m[i] * skew(r[i]).T * skew(r[i])
+            I_funcof_L[i] = L[i] - m[i] * skew(r[i]).T * skew(r[i])
 
             for elem, exprss in enumerate(I_funcof_L[i]):
                 dict_I2Lexp[I[i][elem]] = exprss
