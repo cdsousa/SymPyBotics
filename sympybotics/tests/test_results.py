@@ -3,6 +3,10 @@ import numpy
 from math import cos, sin
 
 import sympybotics
+from sympybotics._compatibility_ import exec_
+
+
+
 
 
 def test_scara_dh_sym_geo_kin():
@@ -121,11 +125,17 @@ def test_puma_dh_num_geo_kin_dyn():
     H_func_def = sympybotics.robotcodegen.dyn_code_to_func(
         'python', puma560.H_code, 'H_puma560', 2, puma560.dof)
 
-    exec(M_func_def)
-    exec(c_func_def)
-    exec(g_func_def)
-    exec(tau_func_def)
-    exec(H_func_def)
+    l = locals()
+    exec_(M_func_def, globals(), l)
+    exec_(c_func_def, globals(), l)
+    exec_(g_func_def, globals(), l)
+    exec_(tau_func_def, globals(), l)
+    exec_(H_func_def, globals(), l)
+    tau_puma560 = l['tau_puma560']
+    g_puma560 = l['g_puma560']
+    c_puma560 = l['c_puma560']
+    M_puma560 = l['M_puma560']
+    H_puma560 = l['H_puma560']
 
     tau = tau_puma560(dynparm_test, q_test, dq_test, ddq_test)
     tau = numpy.matrix(tau).T.astype(numpy.float64)
@@ -307,11 +317,17 @@ def test_puma_mdh_num_geo_kin_dyn():
     H_func_def = sympybotics.robotcodegen.dyn_code_to_func(
         'python', puma560.H_code, 'H_puma560', 2, puma560.dof)
 
-    exec(M_func_def)
-    exec(c_func_def)
-    exec(g_func_def)
-    exec(tau_func_def)
-    exec(H_func_def)
+    l = locals()
+    exec_(M_func_def, globals(), l)
+    exec_(c_func_def, globals(), l)
+    exec_(g_func_def, globals(), l)
+    exec_(tau_func_def, globals(), l)
+    exec_(H_func_def, globals(), l)
+    tau_puma560 = l['tau_puma560']
+    g_puma560 = l['g_puma560']
+    c_puma560 = l['c_puma560']
+    M_puma560 = l['M_puma560']
+    H_puma560 = l['H_puma560']
 
     tau = tau_puma560(dynparm_test, q_test, dq_test, ddq_test)
     tau = numpy.matrix(tau).T.astype(numpy.float64)

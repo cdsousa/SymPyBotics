@@ -6,6 +6,7 @@ from .geometry import Geometry
 from .kinematics import Kinematics
 from .dynamics import Dynamics
 from .symcode import Subexprs, code_to_func
+from ._compatibility_ import exec_
 
 def _fprint(x):
     print(x)
@@ -99,11 +100,15 @@ class RobotDynCode(object):
         func_def_regressor = code_to_func(
             'python', self.H_code, 'regressor_func', ['q', 'dq', 'ddq'],
             q_subs)
+
         global sin, cos, sign
         sin = numpy.sin
         cos = numpy.cos
         sign = numpy.sign
-        exec(func_def_regressor)
+
+        l = locals()
+        exec_(func_def_regressor, globals(), l)
+        regressor_func = l['regressor_func']
 
         if verbose:
             _fprint('calculating base parameters and regressor code')

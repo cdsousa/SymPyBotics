@@ -1,0 +1,22 @@
+""" Python 2/3 compatibility utils """
+
+import sys
+pyversion = sys.version_info[0]
+
+# exec (from https://bitbucket.org/gutworth/six/):
+if pyversion is 3:
+    import builtins
+    exec_ = getattr(builtins, "exec")
+    del builtins
+elif pyversion is 2:
+    def exec_(_code_, _globs_=None, _locs_=None):
+        """Execute code in a namespace."""
+        if _globs_ is None:
+            frame = sys._getframe(1)
+            _globs_ = frame.f_globals
+            if _locs_ is None:
+                _locs_ = frame.f_locals
+            del frame
+        elif _locs_ is None:
+            _locs_ = _globs_
+        exec("""exec _code_ in _globs_, _locs_""")

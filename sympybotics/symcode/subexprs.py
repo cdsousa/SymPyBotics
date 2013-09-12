@@ -170,7 +170,7 @@ class Subexprs(object):
         prep_exprs = [preprocess_for_cse(e, self._optimizations)
                       for e in exprs]
 
-        out_exprs = map(self._parse, prep_exprs)
+        out_exprs = list(map(self._parse, prep_exprs))
 
         if is_single_expr:
             return out_exprs[0]
@@ -193,7 +193,7 @@ class Subexprs(object):
 
         # Find all of the repeated subexpressions.
 
-        ivar_se = {iv: se for se, iv in self._subexp_iv.iteritems()}
+        ivar_se = {iv: se for se, iv in self._subexp_iv.items()}
 
         used_ivs = set()
         repeated = set()
