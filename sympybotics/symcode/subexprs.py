@@ -253,8 +253,8 @@ class Subexprs(object):
         if isinstance(exprs, sympy.Matrix):
             out_exprs = sympy.Matrix(exprs.rows, exprs.cols, out_exprs)
         if self._postprocess is None:
-            return ordered_iv_se.items(), out_exprs
-        return self._postprocess(ordered_iv_se.items(), out_exprs)
+            return list(ordered_iv_se.items()), out_exprs
+        return self._postprocess(list(ordered_iv_se.items()), out_exprs)
 
 
 def fast_cse(exprs, symbols='aux'):

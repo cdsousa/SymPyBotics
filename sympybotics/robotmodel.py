@@ -53,7 +53,7 @@ class RobotDynCode(object):
 
         self.dyn = Dynamics(self.rbtdef, self.geo)
 
-        p('generating invdyn code')
+        p('generating inverse dynamics code')
         invdyn_se = Subexprs()
         self.dyn.gen_invdyn(invdyn_se.collect)
         self.invdyn_code = invdyn_se.get(self.dyn.invdyn)

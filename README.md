@@ -36,7 +36,7 @@ Generation of geometric, kinematic and dynamic models:
 >>> rbt = sympybotics.RobotDynCode(rbtdef, verbose=True)
 generating geometric model
 generating kinematic model
-generating invdyn code
+generating inverse dynamics code
 generating gravity term code
 generating coriolis term code
 generating inertia matrix code
@@ -71,7 +71,7 @@ Matrix([
 C function generation:
 
 ```Python
->>> tau_str = sympybotics.robotcodegen.dyn_code_to_func('C', rbt.invdyn_code, 'tau', 2, rbt.dof, rbtdef.dynparms())
+>>> tau_str = sympybotics.robotcodegen.dyn_code_to_func('C', rbt.invdyn_code, 'tau', rbtdef)
 
 
 ```
