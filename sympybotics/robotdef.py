@@ -109,6 +109,17 @@ class RobotDef(object):
     def __str__(self):
         return 'RobotDef instance: ' + self.name
 
+    def description(self):
+        s = 'RobotDef instance: ' + self.name + '\n'
+        s += '  DH parameters - ' + str(self.dh_convention) + ' convention:\n'
+        s += '    joint - alpha,  a,  d,  theta\n'
+        for i, dh in enumerate(self.dh_parms):
+            s += '      %2i  - ' % (i+1) + \
+                str(dh).replace('(', '').replace(')', '') + '\n'
+        s += '  gravity acceleration: ' + str(list(self.gravityacc)) + '^T\n'
+        s += '  friction model: ' + str(self.frictionmodel) + '\n'
+        return s
+
     @property
     def L(self):
         return _elementslist_to_tensorlist(self.Le)
