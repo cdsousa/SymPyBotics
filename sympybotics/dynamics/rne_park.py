@@ -41,7 +41,7 @@ def rne_park_forward(rbtdef, geom, ifunc=None):
     dV = list(range(0, rbtdef.dof + 1))
 
     V[-1] = zeros((6, 1))
-    dV[-1] = - zeros((3, 1)).col_join(rbtdef.gravity)
+    dV[-1] = - zeros((3, 1)).col_join(rbtdef.gravityacc)
 
     # Forward
     for i in range(rbtdef.dof):

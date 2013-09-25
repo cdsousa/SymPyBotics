@@ -48,6 +48,9 @@ _modified_dh_transfmat = sympy.Matrix([
      _sin(_dh_alpha), _cos(_dh_alpha), _cos(_dh_alpha) * _dh_d],
     [0, 0, 0, 1]])
 
+default_frictionmodel = None
+default_gravityacc = sympy.Matrix([[0.0], [0.0], [-9.81]])
+
 
 class RobotDef(object):
 
@@ -84,11 +87,8 @@ class RobotDef(object):
 
         self._dyn_parms_order = 'Khalil'
 
-        self.frictionmodel = None  # can be None or 'simple'
-
-        # g_a = sympy.symbols('g_a',real=True)
-        g_a = 9.81
-        self.gravity = sympy.Matrix([[0.0], [0.0], [-g_a]])
+        self.frictionmodel = default_frictionmodel  # can be None or 'simple'
+        self.gravityacc = default_gravityacc
 
         self._gen_symbols()
 

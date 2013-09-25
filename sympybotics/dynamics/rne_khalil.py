@@ -16,7 +16,7 @@ def rne_khalil_forward(rbtdef, geom, ifunc=None):
 
     w[-1] = zeros((3, 1))
     dw[-1] = zeros((3, 1))
-    dV[-1] = -rbtdef.gravity
+    dV[-1] = -rbtdef.gravityacc
     U[-1] = zeros((3, 3))
 
     z = Matrix([0, 0, 1])

@@ -47,7 +47,7 @@ def coriolisterm(rbtdef, geom, ifunc=None):
     if not ifunc:
         ifunc = identity
     rbtdeftmp = deepcopy(rbtdef)
-    rbtdeftmp.gravity = zeros((3, 1))
+    rbtdeftmp.gravityacc = zeros((3, 1))
     rbtdeftmp.ddq = zeros((rbtdeftmp.dof, 1))
     geomtmp = Geometry(rbtdeftmp)
     return rne(rbtdeftmp, geomtmp, ifunc)
@@ -62,7 +62,7 @@ def inertiamatrix(rbtdef, geom, ifunc=None):
     M = zeros((rbtdef.dof, rbtdef.dof))
 
     rbtdeftmp = deepcopy(rbtdef)
-    rbtdeftmp.gravity = zeros((3, 1))
+    rbtdeftmp.gravityacc = zeros((3, 1))
     rbtdeftmp.dq = zeros((rbtdeftmp.dof, 1))
 
     for i in range(M.rows):
