@@ -110,13 +110,15 @@ class RobotDef(object):
         return 'RobotDef instance: ' + self.name
 
     def description(self):
+        from sympy import sstr
+
         s = 'RobotDef instance: ' + self.name + '\n'
         s += '  DH parameters - ' + str(self.dh_convention) + ' convention:\n'
         s += '    joint - alpha,  a,  d,  theta\n'
         for i, dh in enumerate(self.dh_parms):
             s += '      %2i  - ' % (i+1) + \
-                str(dh).replace('(', '').replace(')', '') + '\n'
-        s += '  gravity acceleration: ' + str(list(self.gravityacc)) + '^T\n'
+                sstr(dh).replace('(', '').replace(')', '') + '\n'
+        s += '  gravity acceleration: ' + sstr(list(self.gravityacc)) + '^T\n'
         s += '  friction model: ' + str(self.frictionmodel) + '\n'
         return s
 
