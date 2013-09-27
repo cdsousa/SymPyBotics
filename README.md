@@ -71,7 +71,7 @@ Matrix([
 C function generation:
 
 ```Python
->>> tau_str = sympybotics.robotcodegen.dyn_code_to_func('C', rbt.invdyn_code, 'tau', rbtdef)
+>>> tau_str = sympybotics.robotcodegen.robot_code_to_func('C', rbt.invdyn_code, 'tau_out', 'tau', rbtdef)
 
 
 ```

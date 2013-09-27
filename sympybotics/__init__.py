@@ -6,5 +6,5 @@ from .robotdef import RobotDef, q
 from .geometry import Geometry
 from .kinematics import Kinematics
 from .dynamics import Dynamics
-from .robotcodegen import dyn_code_to_func
+from .robotcodegen import robot_code_to_func
 from .robotmodel import RobotAllSymb, RobotDynCode

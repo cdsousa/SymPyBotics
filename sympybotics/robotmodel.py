@@ -98,8 +98,8 @@ class RobotDynCode(object):
         q_subs.update(
             {ddq: 'ddq[%d]' % i for i, ddq in enumerate(self.rbtdef.ddq)})
         func_def_regressor = code_to_func(
-            'python', self.H_code, 'regressor_func', ['q', 'dq', 'ddq'],
-            q_subs)
+            'python', self.H_code, 'regressor', 'regressor_func',
+            ['q', 'dq', 'ddq'], q_subs)
 
         global sin, cos, sign
         sin = numpy.sin

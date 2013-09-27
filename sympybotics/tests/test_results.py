@@ -110,16 +110,16 @@ def test_puma_dh_num_geo_kin_dyn():
     J = J.subs(q_num_subs)
     J = numpy.matrix(J).astype(numpy.float64)
 
-    M_func_def = sympybotics.robotcodegen.dyn_code_to_func(
-        'python', puma560.M_code, 'M_puma560', puma560_def)
-    c_func_def = sympybotics.robotcodegen.dyn_code_to_func(
-        'python', puma560.c_code, 'c_puma560', puma560_def)
-    g_func_def = sympybotics.robotcodegen.dyn_code_to_func(
-        'python', puma560.g_code, 'g_puma560', puma560_def)
-    tau_func_def = sympybotics.robotcodegen.dyn_code_to_func(
-        'python', puma560.invdyn_code, 'tau_puma560', puma560_def)
-    H_func_def = sympybotics.robotcodegen.dyn_code_to_func(
-        'python', puma560.H_code, 'H_puma560', puma560_def)
+    M_func_def = sympybotics.robotcodegen.robot_code_to_func(
+        'python', puma560.M_code, 'M', 'M_puma560', puma560_def)
+    c_func_def = sympybotics.robotcodegen.robot_code_to_func(
+        'python', puma560.c_code, 'c', 'c_puma560', puma560_def)
+    g_func_def = sympybotics.robotcodegen.robot_code_to_func(
+        'python', puma560.g_code, 'g', 'g_puma560', puma560_def)
+    tau_func_def = sympybotics.robotcodegen.robot_code_to_func(
+        'python', puma560.invdyn_code, 'tau', 'tau_puma560', puma560_def)
+    H_func_def = sympybotics.robotcodegen.robot_code_to_func(
+        'python', puma560.H_code, 'H', 'H_puma560', puma560_def)
 
     l = locals()
     exec_(M_func_def, globals(), l)
@@ -298,16 +298,16 @@ def test_puma_mdh_num_geo_kin_dyn():
     J = J.subs(q_num_subs)
     J = numpy.matrix(J).astype(numpy.float64)
 
-    M_func_def = sympybotics.robotcodegen.dyn_code_to_func(
-        'python', puma560.M_code, 'M_puma560', puma560_def)
-    c_func_def = sympybotics.robotcodegen.dyn_code_to_func(
-        'python', puma560.c_code, 'c_puma560', puma560_def)
-    g_func_def = sympybotics.robotcodegen.dyn_code_to_func(
-        'python', puma560.g_code, 'g_puma560', puma560_def)
-    tau_func_def = sympybotics.robotcodegen.dyn_code_to_func(
-        'python', puma560.invdyn_code, 'tau_puma560', puma560_def)
-    H_func_def = sympybotics.robotcodegen.dyn_code_to_func(
-        'python', puma560.H_code, 'H_puma560', puma560_def)
+    M_func_def = sympybotics.robotcodegen.robot_code_to_func(
+        'python', puma560.M_code, 'M', 'M_puma560', puma560_def)
+    c_func_def = sympybotics.robotcodegen.robot_code_to_func(
+        'python', puma560.c_code, 'c', 'c_puma560', puma560_def)
+    g_func_def = sympybotics.robotcodegen.robot_code_to_func(
+        'python', puma560.g_code, 'g', 'g_puma560', puma560_def)
+    tau_func_def = sympybotics.robotcodegen.robot_code_to_func(
+        'python', puma560.invdyn_code, 'tau', 'tau_puma560', puma560_def)
+    H_func_def = sympybotics.robotcodegen.robot_code_to_func(
+        'python', puma560.H_code, 'H', 'H_puma560', puma560_def)
 
     l = locals()
     exec_(M_func_def, globals(), l)
