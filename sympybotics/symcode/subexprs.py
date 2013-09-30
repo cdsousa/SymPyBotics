@@ -212,7 +212,10 @@ class Subexprs(object):
                         repeated.add(symb)
 
         for expr in exprs:
-            _find_repeated_subexprs(expr)
+            if expr.is_Matrix:
+                expr.applyfunc(_find_repeated_subexprs)
+            else:
+                _find_repeated_subexprs(expr)
 
         # Substitute symbols for all of the repeated subexpressions.
         # remove temporary replacements that weren't used more than once
@@ -220,25 +223,29 @@ class Subexprs(object):
         tmpivs_ivs = dict()
         ordered_iv_se = collections.OrderedDict()
 
-        def _get_subexprs(args):
-            args = list(args)
-            for i, symb in enumerate(args):
-                if symb in ivar_se:
-                    if symb in tmpivs_ivs:
-                        args[i] = tmpivs_ivs[symb]
+        def _get_subexprs(symb):
+            if symb in ivar_se:
+                if symb in tmpivs_ivs:
+                    return tmpivs_ivs[symb]
+                else:
+                    subexpr = ivar_se[symb]
+                    args = list(map(_get_subexprs, subexpr.args))
+                    subexpr = type(subexpr)(*args)
+                    if symb in repeated:
+                        ivar = next(symbols)
+                        ordered_iv_se[ivar] = subexpr
+                        tmpivs_ivs[symb] = ivar
+                        return ivar
                     else:
-                        subexpr = ivar_se[symb]
-                        subexpr = type(subexpr)(*_get_subexprs(subexpr.args))
-                        if symb in repeated:
-                            ivar = next(symbols)
-                            ordered_iv_se[ivar] = subexpr
-                            tmpivs_ivs[symb] = ivar
-                            args[i] = ivar
-                        else:
-                            args[i] = subexpr
-            return args
+                        return subexpr
+            return symb
 
-        out_exprs = _get_subexprs(exprs)
+        out_exprs = []
+        for expr in exprs:
+            if expr.is_Matrix:
+                out_exprs.append(expr.applyfunc(_get_subexprs))
+            else:
+                out_exprs.append(_get_subexprs(expr))
 
         # Postprocess the expressions to return the expressions to canonical
         # form.

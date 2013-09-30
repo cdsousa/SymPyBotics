@@ -15,7 +15,7 @@ def apply_func(code, func, apply_to_ivs=True):
         code_ivs = [(iv, func(se)) for iv, se in code[0]]
     code_exprs = []
     for expr in code[1]:
-        if expr.is_Matrix:
+        if isinstance(expr, sympy.MatrixBase):
             expr = expr.applyfunc(func)
         else:
             expr = func(expr)
@@ -123,7 +123,7 @@ def gen_c_func(code, out_parms, func_parms, func_name='func'):
 
     indent = 2 * ' '
 
-    ccode = 'void ' + func_name + '(  double* '
+    ccode = 'void ' + func_name + '( double* '
 
     ccode += ', double* '.join(out_parms)
 
