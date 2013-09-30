@@ -1,0 +1,32 @@
+%YAML 1.2
+---
+robot:
+    name: 3-DOF Planar Robot
+
+    DH parameters:
+        - [0, 3.0, 0, q]                   # < order: alpha, a, d, theta
+        - [0, 2, 0, q + pi]                #      q means the joint position
+        - [0, 2.5, 0, q + pi/2]
+
+    DH convention: standard                # < standard OR modified
+
+    extra:                                 # < OPTIONAL definitions
+        friction model: simple             # < simple OR None (None by default)
+        gravity acceleration: [0, 0, -9.8] # < in base frame coords
+                                           #     ([0, 0, -9.8] by default)
+
+generate:
+    source:
+        filename: out.c
+        lang: c
+        funcname: rbt
+        outputs: [T, M, g, c]   # < options: T, J, tau, M, c, g, f, H, Hb
+                                #     corresponding, respectively, to:
+                                #      end-effector transformation, Jacobian,
+                                #   optional   inverse dynamics (no friction), inertia
+                                #      matrix, Coriolis term, gravity term,
+                                #      friction term, regressor, base regressor
+
+    base dynamic parameters:    # < OPTIONAL
+        filename: baseparms.txt # <
+...
