@@ -55,7 +55,7 @@ def _ccode(expr, ):
         return code
 
 
-def code_to_string(code, out_parms, indent='', realtype='',
+def code_to_string(code, out_parms, printer, indent='', realtype='',
                    line_end=''):
 
     codestr = ''
@@ -65,14 +65,14 @@ def code_to_string(code, out_parms, indent='', realtype='',
 
     for i in range(len(code[0])):
         codestr += indent + realtype + \
-            sympy.ccode(code[0][i][0]) + ' = ' + _ccode(
+            printer(code[0][i][0]) + ' = ' + printer(
                 code[0][i][1]) + line_end + '\n'
 
     for c, out in enumerate(out_parms):
         codestr += '\n'
         for i in range(len(code[1][c])):
             codestr += indent + out + \
-                '[' + str(i) + '] = ' + _ccode(code[1][c][i]) + line_end + '\n'
+                '[' + str(i) + '] = ' + printer(code[1][c][i]) + line_end + '\n'
 
     return codestr
 
@@ -105,9 +105,12 @@ def gen_py_func(code, out_parms, func_parms, func_name='func'):
     pycode += '):\n\n'
 
     for i, out in enumerate(out_parms):
-        pycode += indent + out + ' = [0]*' + str(len(code[1][i])) + '\n\n'
+        pycode += indent + out + ' = [0]*' + str(len(code[1][i])) + '\n'
 
-    mainpycode = code_to_string(code, out_parms, indent)
+    pycode += '\n'
+
+    mainpycode = code_to_string(code, out_parms,
+                                sympy.printing.lambdarepr.lambdarepr, indent)
 
     pycode += mainpycode
 
@@ -132,7 +135,7 @@ def gen_c_func(code, out_parms, func_parms, func_name='func'):
 
     ccode += ' )\n{\n'
 
-    mainccode = code_to_string(code, out_parms, indent, 'double', ';')
+    mainccode = code_to_string(code, out_parms, _ccode, indent, 'double', ';')
 
     ccode += mainccode + '\n' + indent + 'return;\n}'
 
