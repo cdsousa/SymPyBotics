@@ -5,6 +5,7 @@ from __future__ import print_function
 import argparse
 import yaml
 import sys
+import textwrap
 
 from sympy import Matrix
 from numpy import sin, cos, sign
@@ -139,10 +140,12 @@ def gen_robot(defs_dict):
     srccode = robot_code_to_func(lang, code, outputs, source['funcname'], rbtdef)
     if outputs_set & {'tau', 'M', 'g', 'c', 'f', 'H'}:
         comment = {'py':'# ', 'c':'// '}.get(lang, '')
-        parms_str = '\n%s --- Order of dynamic parameters ---\n'%comment
-        for p in rbtdef.dynparms():
-            parms_str += comment + str(p) + '\n'
-        parms_str += '\n'
+        parms_str =  ", ".join([str(p) for p in rbtdef.dynparms()])
+        parms_str = textwrap.wrap(parms_str, 77)
+        parms_str = comment + ('\n' + comment).join(parms_str)
+        parms_str = '\n' + comment + ' --- Order of dynamic parameters ---\n' \
+            + parms_str
+        parms_str += '\n\n'
         srccode = parms_str + srccode
     fprint('done\n')
 
@@ -157,7 +160,7 @@ def gen_robot(defs_dict):
         fprint("Saving base parameter info into '%s' file ... "%filename)
         baseparms = 'Base parameters:\n'
         for i, b in enumerate(rbtdyn.baseparms):
-            baseparms += 'b%d = %s\n'%(i+1, b)
+            baseparms += 'b%d = %s\n'%(i+1, b.n())
 
         def print_mat(m, f='%g'):
             s = ''
@@ -202,7 +205,7 @@ robot:
 
 generate:
     source:
-        filename: out.c
+        filename: planar3.c
         lang: c
         funcname: rbt
         outputs: [T, M, g, c]   # < options: T, J, tau, M, c, g, f, H, Hb
@@ -213,8 +216,9 @@ generate:
                                 #      friction term, regressor, base regressor
 
     base dynamic parameters:    # < OPTIONAL
-        filename: baseparms.txt # <
-...'''
+        filename: planar3.txt   # <
+...
+'''
 
 
 
@@ -223,7 +227,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Generate robot model from a given .yml definition file.')
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument('filename', nargs='?', help='robot definitions YAM file')
+    group.add_argument('filename', nargs='?', help='robot definitions YAML file')
     group.add_argument('--example', action='store_true', help='print example file')
     args = parser.parse_args()
 

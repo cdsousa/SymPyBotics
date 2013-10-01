@@ -1,23 +1,25 @@
 %YAML 1.2
 ---
 robot:
-    name: 3-DOF Planar Robot
+    name: Puma Robot 560
 
     DH parameters:
-        - [0, 3.0, 0, q]                   # < order: alpha, a, d, theta
-        - [0, 2, 0, q + pi]                #      q means the joint position
-        - [0, 2.5, 0, q + pi/2]
-
-    DH convention: standard                # < standard OR modified
+        - [    0,       0,       0, q]     # < order: alpha, a, d, theta
+        - [-pi/2,       0,  0.2435, q]     #      q means the joint position
+        - [    0,  0.4318, -0.0934, q]
+        - [ pi/2, -0.0203,  0.4331, q]
+        - [-pi/2,       0,       0, q]
+        - [ pi/2,       0,       0, q]
+    DH convention: modified                # < standard OR modified
 
     extra:                                 # < OPTIONAL definitions
-        friction model: simple             # < simple OR None (None by default)
+        friction model: None               # < simple OR None (None by default)
         gravity acceleration: [0, 0, -9.8] # < in base frame coords
                                            #     ([0, 0, -9.8] by default)
 
 generate:
     source:
-        filename: planar3.c
+        filename: puma560.c
         lang: c
         funcname: rbt
         outputs: [T, M, g, c]   # < options: T, J, tau, M, c, g, f, H, Hb
@@ -28,5 +30,5 @@ generate:
                                 #      friction term, regressor, base regressor
 
     base dynamic parameters:    # < OPTIONAL
-        filename: planar3.txt   # <
+        filename: puma560.txt   # <
 ...
