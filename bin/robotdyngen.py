@@ -10,7 +10,7 @@ import textwrap
 from sympy import Matrix
 from numpy import sin, cos, sign
 from sympybotics import RobotDef, Geometry, Kinematics, Dynamics, robot_code_to_func
-from sympybotics.symcode import Subexprs
+from sympybotics.symcode import Subexprs, codestring_count
 from sympybotics._compatibility_ import exec_
 
 
@@ -136,18 +136,33 @@ def gen_robot(defs_dict):
     fprint('Generating source code file ... ')
     lang = source['lang'].lower()
     lang = {'python':'py', 'c++':'c'}.get(lang, lang)
+    comment = {'py':'# ', 'c':'// '}.get(lang, '')
+    const = {'py':'%s = %s', 'c':'#define %s %s'}.get(lang, '')
     code = se.get([exprs[o] for o in outputs])
-    srccode = robot_code_to_func(lang, code, outputs, source['funcname'], rbtdef)
+
+    srccode = ''
+
     if outputs_set & {'tau', 'M', 'g', 'c', 'f', 'H'}:
-        comment = {'py':'# ', 'c':'// '}.get(lang, '')
         parms_str =  ", ".join([str(p) for p in rbtdef.dynparms()])
         parms_str = textwrap.wrap(parms_str, 77)
         parms_str = comment + ('\n' + comment).join(parms_str)
         parms_str = '\n' + comment + ' --- Order of dynamic parameters ---\n' \
             + parms_str
         parms_str += '\n\n'
-        srccode = parms_str + srccode
-    fprint('done\n')
+        parms_str += const % ('NDYNPARM', rbtdyn.n_dynparms)
+        parms_str += '\n'
+        srccode += parms_str
+
+    srccode += const % ('NDOF', rbtdef.dof)
+    srccode += '\n\n'
+
+    funccode = robot_code_to_func(
+        lang, code, outputs, source['funcname'], rbtdef)
+
+    print('')
+    print(codestring_count(funccode))
+    srccode += funccode
+    fprint(' ... done\n')
 
     fprint("Saving source code into '%s' file ... "%source['filename'])
     f = open(source['filename'], 'w')

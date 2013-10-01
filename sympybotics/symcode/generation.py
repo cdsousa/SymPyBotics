@@ -126,16 +126,15 @@ def gen_c_func(code, out_parms, func_parms, func_name='func'):
 
     indent = 2 * ' '
 
-    ccode = 'void ' + func_name + '( double* '
+    ccode = 'void ' + func_name + '( '
 
-    ccode += ', double* '.join(out_parms)
-
-    ccode += ', const double* '
-    ccode += ', const double* '.join(func_parms)
+    ccode += ', '.join('double %s[]' % out for out in out_parms)
+    ccode += ', '
+    ccode += ', '.join('const double %s[]' % p for p in func_parms)
 
     ccode += ' )\n{\n'
 
-    mainccode = code_to_string(code, out_parms, _ccode, indent, 'double', ';')
+    mainccode = code_to_string(code, out_parms, _ccode, indent, 'const double', ';')
 
     ccode += mainccode + '\n' + indent + 'return;\n}'
 
