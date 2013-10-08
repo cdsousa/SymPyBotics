@@ -1,0 +1,34 @@
+%YAML 1.2
+---
+robot:
+    name: Puma Robot 560
+
+    DH parameters:
+        - [    0,       0,       0, q]     # < order: alpha, a, d, theta
+        - [-pi/2,       0,  0.2435, q]     #      q means the joint position
+        - [    0,  0.4318, -0.0934, q]
+        - [ pi/2, -0.0203,  0.4331, q]
+        - [-pi/2,       0,       0, q]
+        - [ pi/2,       0,       0, q]
+    DH convention: modified                # < standard OR modified
+
+    extra:                                 # < OPTIONAL definitions
+        friction model: None               # < simple OR None (None by default)
+        gravity acceleration: [0, 0, -9.8] # < in base frame coords
+                                           #     ([0, 0, -9.8] by default)
+
+generate:
+    source:
+        filename: puma560.c
+        lang: c
+        funcname: func
+        outputs: [T, J, M, g, c]   # < options: T, J, tau, M, c, g, f, H, Hb
+                                #     corresponding, respectively, to:
+                                #      end-effector transformation, Jacobian,
+                                #   optional   inverse dynamics (no friction), inertia
+                                #      matrix, Coriolis term, gravity term,
+                                #      friction term, regressor, base regressor
+
+#     base dynamic parameters:    # < OPTIONAL
+#         filename: puma560.txt   # <
+...
