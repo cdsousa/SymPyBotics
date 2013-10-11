@@ -1,4 +1,5 @@
 from sympy import zeros, eye, Matrix
+from .extra_dyn import frictionforce, driveinertiaterm
 from ..utils import sym_skew as skew
 from ..utils import identity
 
@@ -71,6 +72,9 @@ def rne_khalil_backward(rbtdef, geom, fw_results, ifunc=None):
 
     tau = zeros((rbtdef.dof, 1))
 
+    fric = frictionforce(rbtdef)
+    Idrive = driveinertiaterm(rbtdef)
+
     # Backward
     for i in range(rbtdef.dof - 1, -1, -1):
 
@@ -93,7 +97,6 @@ def rne_khalil_backward(rbtdef, geom, fw_results, ifunc=None):
             pdh[i + 1].cross(f_nj).T  # + m_e[i]
         m[i] = ifunc(m[i])
 
-        tau[i] = ifunc((s * f[i] + ns * m[i]).T * z)  # + Irotor[i] * ddq[i]
+        tau[i] = ifunc(((s * f[i] + ns * m[i]).T * z)[0] + fric[i] + Idrive[i])
 
     return tau
-

@@ -1,7 +1,6 @@
 from copy import copy, deepcopy
 from sympy import zeros, Matrix
 from ..utils import identity
-from .simple_fric import frictionterm
 from .rne import rne_forward, rne_backward
 
 
@@ -19,11 +18,6 @@ def regressor(rbtdef, geom, ifunc=None):
 
     Y = zeros((rbtdef.dof, len(dynparms)))
 
-    if rbtdef.frictionmodel == 'simple':
-        fric = frictionterm(rbtdef)
-        fric_dict = dict(zip(rbtdef.fc, [0] * len(rbtdef.fc)))
-        fric_dict.update(dict(zip(rbtdef.fv, [0] * len(rbtdef.fv))))
-
     for p, parm in enumerate(dynparms):
 
         for i in range(rbtdef.dof):
@@ -32,12 +26,11 @@ def regressor(rbtdef, geom, ifunc=None):
             rbtdeftmp.l[i] = Matrix(rbtdef.l[i]).applyfunc(
                 lambda x: 1 if x == parm else 0)
             rbtdeftmp.m[i] = 1 if rbtdef.m[i] == parm else 0
+            rbtdeftmp.Ia[i] = 1 if rbtdef.Ia[i] == parm else 0
+            rbtdeftmp.fv[i] = 1 if rbtdef.fv[i] == parm else 0
+            rbtdeftmp.fc[i] = 1 if rbtdef.fc[i] == parm else 0
+            rbtdeftmp.fo[i] = 1 if rbtdef.fo[i] == parm else 0
 
         Y[:, p] = rne_backward(rbtdeftmp, geom, fw_results, ifunc=ifunc)
-
-        if rbtdef.frictionmodel == 'simple':
-            select = copy(fric_dict)
-            select.update({parm: 1})
-            Y[:, p] = ifunc(Y[:, p] + fric.subs(select))
 
     return Y

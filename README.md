@@ -20,7 +20,7 @@ Definition of a 2 DOF example robot:
 ...                                ( 'pi/2', 0, 0, 'q-pi/2')], # (alpha, a, d, theta)
 ...                               dh_convention='standard' # either 'standard' or 'modified'
 ...                              )
->>> rbtdef.frictionmodel = 'simple' # options are 'simple' and None, defaults to None
+>>> rbtdef.frictionmodel = {'Coulomb', 'viscous'} # options are None or a combination of 'Coulomb', 'viscous' and 'offset'
 
 ```
 

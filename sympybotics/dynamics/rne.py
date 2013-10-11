@@ -4,6 +4,7 @@ from ..utils import identity
 from ..geometry import Geometry
 from .rne_park import rne_park_forward, rne_park_backward
 from .rne_khalil import rne_khalil_forward, rne_khalil_backward
+from .extra_dyn import frictionforce
 
 
 def rne_forward(rbtdef, geom, ifunc=None):
@@ -38,6 +39,7 @@ def gravityterm(rbtdef, geom, ifunc=None):
     rbtdeftmp = deepcopy(rbtdef)
     rbtdeftmp.dq = zeros((rbtdeftmp.dof, 1))
     rbtdeftmp.ddq = zeros((rbtdeftmp.dof, 1))
+    rbtdeftmp.frictionmodel = None
     geomtmp = Geometry(rbtdeftmp)
     return rne(rbtdeftmp, geomtmp, ifunc)
 
@@ -49,8 +51,14 @@ def coriolisterm(rbtdef, geom, ifunc=None):
     rbtdeftmp = deepcopy(rbtdef)
     rbtdeftmp.gravityacc = zeros((3, 1))
     rbtdeftmp.ddq = zeros((rbtdeftmp.dof, 1))
+    rbtdeftmp.frictionmodel = None
     geomtmp = Geometry(rbtdeftmp)
     return rne(rbtdeftmp, geomtmp, ifunc)
+
+
+def frictionterm(rbtdef, ifunc=None):
+    '''Generate friction forces expression.'''
+    return frictionforce(rbtdef, ifunc)
 
 
 def inertiamatrix(rbtdef, geom, ifunc=None):
@@ -63,6 +71,7 @@ def inertiamatrix(rbtdef, geom, ifunc=None):
 
     rbtdeftmp = deepcopy(rbtdef)
     rbtdeftmp.gravityacc = zeros((3, 1))
+    rbtdeftmp.frictionmodel = None
     rbtdeftmp.dq = zeros((rbtdeftmp.dof, 1))
 
     for i in range(M.rows):
