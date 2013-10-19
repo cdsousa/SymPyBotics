@@ -5,7 +5,7 @@ Symbolic Framework for Modeling and Identification of Robot Dynamics
 
 Uses [Sympy](http://sympy.org) and [Numpy](http://www.numpy.org/) libraries.
 
-[![Build Status](https://travis-ci.org/cdsousa/sympybotics.png?branch=master)](https://travis-ci.org/cdsousa/sympybotics)
+[![Build Status](https://travis-ci.org/cdsousa/SymPyBotics.png?branch=master)](https://travis-ci.org/cdsousa/SymPyBotics)
 
 Example
 -------
