@@ -55,6 +55,11 @@ def _ccode(expr, ):
         return code
 
 
+def _juliacode(expr, ):
+    code = sympy.printing.lambdarepr.lambdarepr(expr)
+    return code.replace('**', '^')
+
+
 def code_to_string(code, out_parms, printer, indent='', realtype='',
                    line_end=''):
 
@@ -143,6 +148,39 @@ def gen_c_func(code, out_parms, func_parms, func_name='func'):
     return ccode
 
 
+def gen_julia_func(code, out_parms, func_parms, func_name='func'):
+
+    indent = 4 * ' '
+
+    ccode = 'function ' + func_name + '('
+
+    ccode += ', '.join(out_parms)
+
+    ccode += ', '
+    ccode += ', '.join(func_parms)
+
+    ccode += ')\n\n'
+
+    code = code[0], [(e.T if isinstance(e, sympy.MatrixBase) else e)
+                     for e in code[1]]
+
+    mainccode = code_to_string(code, out_parms, _juliacode, indent, '', '')
+
+    # pass from 0-idexed to 1-indexed arrays
+    mainccode = re.sub(
+        r"\[([0-9]+)\]",
+        lambda m: '[' + str(int(m.group(1))+1) + ']',
+        mainccode)
+
+    ccode += mainccode + '\n' + indent + 'return '
+    ccode += ', '.join(out_parms)
+    ccode += '\nend'
+
+    ccode = ccode.replace('\n\n', '\n#\n')
+
+    return ccode
+
+
 def code_to_func(lang, code, out_parms, func_name, func_parms, symb_replace):
 
     if not isinstance(code[1], list):
@@ -155,6 +193,8 @@ def code_to_func(lang, code, out_parms, func_name, func_parms, symb_replace):
         gen_func = gen_py_func
     elif lang in ['c', 'c++']:
         gen_func = gen_c_func
+    elif lang in ['julia', 'jl']:
+        gen_func = gen_julia_func
     else:
         raise Exception('chosen language not supported.')
 

@@ -1,7 +1,6 @@
 import sympy
 import sympy.utilities
-from sympy.simplify.cse_main import cse_optimizations, preprocess_for_cse, \
-    postprocess_for_cse
+from sympy.simplify.cse_main import preprocess_for_cse, postprocess_for_cse
 
 import collections
 
@@ -11,9 +10,7 @@ class Subexprs(object):
     def __init__(self, optimizations=None, postprocess=None):
 
         if optimizations is None:
-            # Pull out the default here just in case there are some weird
-            # manipulations of the module-level list in some other thread.
-            optimizations = list(cse_optimizations)
+            optimizations = []
         self._optimizations = optimizations
         self._postprocess = postprocess
 

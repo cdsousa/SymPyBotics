@@ -19,7 +19,6 @@ def _elementslist_to_tensorlist(elementslist):
     return [_elements_to_tensor(elems) for elems in elementslist]
 
 
-
 _joint_symb = _new_sym('q')
 
 
@@ -49,6 +48,7 @@ _modified_dh_transfmat = sympy.Matrix([
     [0, 0, 0, 1]])
 
 default_frictionmodel = None
+default_driveinertiamodel = None
 default_gravityacc = sympy.Matrix([[0.0], [0.0], [-9.81]])
 
 
@@ -87,7 +87,13 @@ class RobotDef(object):
 
         self._dyn_parms_order = 'Khalil'
 
-        self.frictionmodel = default_frictionmodel  # can be None or 'simple'
+        # can be None or a list containing any combination of the strings
+        #   'Coulomb', 'viscous' and 'offset', e.g., {'Coulomb', 'viscous'}
+        self.frictionmodel = default_frictionmodel
+
+        # can be None or 'simplified'
+        self.driveinertiamodel = default_driveinertiamodel
+
         self.gravityacc = default_gravityacc
 
         self._gen_symbols()
@@ -162,8 +168,11 @@ class RobotDef(object):
         r = self.r = list(range(self.dof))
         Ie = self.Ie = list(range(self.dof))
 
+        Ia = self.Ia = list(range(self.dof))
+
         fv = self.fv = list(range(self.dof))
         fc = self.fc = list(range(self.dof))
+        fo = self.fo = list(range(self.dof))
 
         for i in range(dof):
 
@@ -178,8 +187,11 @@ class RobotDef(object):
             Ie[i] = [_new_sym('I_' + str(i + 1) + elem)
                      for elem in ['xx', 'xy', 'xz', 'yy', 'yz', 'zz']]
 
+            Ia[i] = _new_sym('Ia_' + str(i + 1))
+
             fv[i] = _new_sym('fv_' + str(i + 1))
             fc[i] = _new_sym('fc_' + str(i + 1))
+            fo[i] = _new_sym('fo_' + str(i + 1))
 
         I = self.I
         L = self.L
@@ -287,21 +299,29 @@ class RobotDef(object):
                     'RobotDef.Parms(): dynamic parameters order \''
                     + parm_order + '\' not know.')
 
-            if self.frictionmodel == 'simple':
-                parms += [self.fv[i], self.fc[i]]
+            if self.driveinertiamodel == 'simplified':
+                parms += [self.Ia[i]]
+
+            if self.frictionmodel is not None:
+                if 'viscous' in self.frictionmodel:
+                    parms += [self.fv[i]]
+                if 'Coulomb' in self.frictionmodel:
+                    parms += [self.fc[i]]
+                if 'offset' in self.frictionmodel:
+                    parms += [self.fo[i]]
 
         return parms
 
-    def _set_new_dynparms(self, dynparms):
-        """Define new symbols to dynamic parameters."""
-        symparms = self.dynparms()
-        parmsidx = dict(zip(symparms, range(len(symparms))))
-        for i in range(self.dof):
-            for x, Le_xx in enumerate(self.Le[i]):
-                self.Le[i][x] = dynparms[parmsidx[Le_xx]]
-            for x, l_x in enumerate(self.l[i]):
-                self.l[i][x] = dynparms[parmsidx[l_x]]
-            self.m[i] = dynparms[parmsidx[self.m[i]]]
-            if self.frictionmodel == 'simple':
-                self.fv[i] = dynparms[parmsidx[self.fv[i]]]
-                self.fc[i] = dynparms[parmsidx[self.fc[i]]]
+    #def _set_new_dynparms(self, dynparms):
+        #"""Define new symbols to dynamic parameters."""
+        #symparms = self.dynparms()
+        #parmsidx = dict(zip(symparms, range(len(symparms))))
+        #for i in range(self.dof):
+            #for x, Le_xx in enumerate(self.Le[i]):
+                #self.Le[i][x] = dynparms[parmsidx[Le_xx]]
+            #for x, l_x in enumerate(self.l[i]):
+                #self.l[i][x] = dynparms[parmsidx[l_x]]
+            #self.m[i] = dynparms[parmsidx[self.m[i]]]
+            #if self.frictionmodel == 'simple':
+                #self.fv[i] = dynparms[parmsidx[self.fv[i]]]
+                #self.fc[i] = dynparms[parmsidx[self.fc[i]]]

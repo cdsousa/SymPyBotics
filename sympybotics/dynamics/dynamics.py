@@ -1,11 +1,8 @@
 import sympy
 import numpy
 
-from ..geometry import Geometry
-
-from .rne import rne, gravityterm, coriolisterm, inertiamatrix
+from .rne import rne, gravityterm, coriolisterm, frictionterm, inertiamatrix
 from .regressor import regressor
-from .simple_fric import frictionterm
 from .dyn_parm_dep import find_dyn_parm_deps
 
 
@@ -30,18 +27,15 @@ class Dynamics(object):
         self.c = coriolisterm(
             self.rbtdef, self.geom, ifunc)
 
+    def gen_frictionterm(self, ifunc=None):
+        self.f = frictionterm(self.rbtdef, ifunc)
+
     def gen_inertiamatrix(self, ifunc=None):
         self.M = inertiamatrix(
             self.rbtdef, self.geom, ifunc)
 
     def gen_regressor(self, ifunc=None):
         self.H = regressor(self.rbtdef, self.geom, ifunc)
-
-    def gen_frictionterm(self, ifunc=None):
-        if self.rbtdef.frictionmodel == 'simple':
-            self.f = frictionterm(self.rbtdef, ifunc)
-        else:
-            self.f = sympy.zeros(self.dof, 1)
 
     def gen_all(self, ifunc=None):
         self.gen_invdyn(ifunc)

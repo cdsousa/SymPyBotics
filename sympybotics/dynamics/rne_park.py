@@ -1,4 +1,5 @@
 from sympy import zeros, eye
+from .extra_dyn import frictionforce, driveinertiaterm
 from ..utils import sym_skew as skew
 from ..utils import identity
 
@@ -75,6 +76,9 @@ def rne_park_backward(rbtdef, geom, fw_results, ifunc=None):
 
     tau = zeros((rbtdef.dof, 1))
 
+    fric = frictionforce(rbtdef)
+    Idrive = driveinertiaterm(rbtdef)
+
     # Backward
     for i in range(rbtdef.dof - 1, -1, -1):
 
@@ -85,7 +89,6 @@ def rne_park_backward(rbtdef, geom, fw_results, ifunc=None):
             Llm * dV[i] - adjdual(V[i],  Llm * V[i])
         F[i] = ifunc(F[i])
 
-        tau[i] = ifunc((geom.S[i].transpose() * F[i])[0])
+        tau[i] = ifunc((geom.S[i].transpose() * F[i])[0] + fric[i] + Idrive[i])
 
     return tau
-
