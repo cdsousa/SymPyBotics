@@ -34,11 +34,11 @@ def rne_khalil_forward(rbtdef, geom, ifunc=None):
         w[i] = ifunc(w[i])
 
         dw[i] = geom.Rdh[i].T * dw[i - 1] + ns * \
-            (rbtdef.ddq[i] * z + w_pj.cross(rbtdef.dq[i] * z).T)
+            (rbtdef.ddq[i] * z + w_pj.cross(rbtdef.dq[i] * z).reshape(3, 1))
         dw[i] = ifunc(dw[i])
 
         dV[i] = geom.Rdh[i].T * (dV[i - 1] + U[i - 1] * geom.pdh[i]) + s * (
-            rbtdef.ddq[i] * z + 2 * w_pj.cross(rbtdef.dq[i] * z).T)
+            rbtdef.ddq[i] * z + 2 * w_pj.cross(rbtdef.dq[i] * z).reshape(3, 1))
         dV[i] = ifunc(dV[i])
 
         U[i] = skew(dw[i]) + skew(w[i]) ** 2
@@ -85,7 +85,8 @@ def rne_khalil_backward(rbtdef, geom, fw_results, ifunc=None):
         F[i] = ifunc(F[i])
 
         M[i] = rbtdef.L[i] * dw[i] + w[i].cross(
-            rbtdef.L[i] * w[i]).T + Matrix(rbtdef.l[i]).cross(dV[i]).T
+            rbtdef.L[i] * w[i]).reshape(3, 1) + \
+            Matrix(rbtdef.l[i]).cross(dV[i]).reshape(3, 1)
         M[i] = ifunc(M[i])
 
         f_nj = Rdh[i + 1] * f[i + 1]
@@ -94,7 +95,7 @@ def rne_khalil_backward(rbtdef, geom, fw_results, ifunc=None):
         f[i] = ifunc(f[i])
 
         m[i] = M[i] + Rdh[i + 1] * m[i + 1] + \
-            pdh[i + 1].cross(f_nj).T  # + m_e[i]
+            pdh[i + 1].cross(f_nj).reshape(3, 1)  # + m_e[i]
         m[i] = ifunc(m[i])
 
         tau[i] = ifunc(((s * f[i] + ns * m[i]).T * z)[0] + fric[i] + Idrive[i])
