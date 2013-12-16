@@ -37,7 +37,7 @@ class Kinematics(object):
                         self.Jp[l][0:3, j] = ifunc(z_ext[j - 1])
                     else:
                         self.Jp[l][0:3, j] = ifunc(z_ext[j - 1].cross(
-                            (p_ext[l] - p_ext[j - 1])).transpose())
+                            (p_ext[l] - p_ext[j - 1])).reshape(3, 1))
 
             self.Jo = list(range(self.rbtdef.dof))
             for l in range(self.rbtdef.dof):
@@ -58,7 +58,7 @@ class Kinematics(object):
                         self.Jp[l][0:3, j] = ifunc(geom.z[j])
                     else:
                         self.Jp[l][0:3, j] = ifunc(geom.z[j].cross(
-                            (geom.p[l] - geom.p[j])).transpose())
+                            (geom.p[l] - geom.p[j])).reshape(3, 1))
 
             self.Jo = list(range(self.rbtdef.dof))
             for l in range(self.rbtdef.dof):

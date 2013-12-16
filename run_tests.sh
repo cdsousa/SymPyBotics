@@ -1,2 +1,2 @@
 #!/bin/sh
-nosetests --with-doctest --doctest-extension=md
+nosetests --with-doctest --doctest-extension=md $@
