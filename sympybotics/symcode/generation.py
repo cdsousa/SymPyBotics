@@ -61,7 +61,7 @@ def _juliacode(expr, ):
 
 
 def code_to_string(code, out_parms, printer, indent='', realtype='',
-                   line_end=''):
+                   line_end='', outidxoffset=0):
 
     codestr = ''
 
@@ -77,7 +77,8 @@ def code_to_string(code, out_parms, printer, indent='', realtype='',
         codestr += '\n'
         for i in range(len(code[1][c])):
             codestr += indent + out + \
-                '[' + str(i) + '] = ' + printer(code[1][c][i]) + line_end + '\n'
+                '[' + str(i+outidxoffset) + '] = ' + \
+                printer(code[1][c][i]) + line_end + '\n'
 
     return codestr
 
@@ -165,13 +166,14 @@ def gen_julia_func(code, out_parms, func_parms, func_name='func'):
     code = code[0], [(e.T if isinstance(e, sympy.MatrixBase) else e)
                      for e in code[1]]
 
-    mainccode = code_to_string(code, out_parms, _juliacode, indent, '', '')
+    mainccode = code_to_string(code, out_parms, _juliacode, indent, '', '',
+                               outidxoffset=1)
 
-    # pass from 0-idexed to 1-indexed arrays
-    mainccode = re.sub(
-        r"\[([0-9]+)\]",
-        lambda m: '[' + str(int(m.group(1))+1) + ']',
-        mainccode)
+    ## pass from 0-idexed to 1-indexed arrays
+    #mainccode = re.sub(
+        #r"\[([0-9]+)\]",
+        #lambda m: '[' + str(int(m.group(1))+1) + ']',
+        #mainccode)
 
     ccode += mainccode + '\n' + indent + 'return '
     ccode += ', '.join(out_parms)
