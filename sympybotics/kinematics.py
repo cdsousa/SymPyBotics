@@ -6,7 +6,17 @@ _id = lambda x: x
 
 class Kinematics(object):
 
-    """Robot symbolic Jacobians."""
+    """Robot symbolic Jacobians.
+
+        kinobj.J: list of link frame Jacobians - complete (6 x N):
+                   [linear_velocity
+                    angular_velocity] = J * joint_velocities
+        kinobj.Jc: list of link center-of-mass Jacobians - complete
+        kinobj.Jp: list of link frame Jacobians - linear velocity part only
+        kinobj.Jo: list of link frame Jacobians - angular velocity part only
+        kinobj.Jcp: list of link center-of-mass Jacobians - linear part
+        kinobj.Jco: list of link center-of-mass Jacobians - angular part
+    """
 
     def __init__(self, robotdef, geom, ifunc=None):
 
