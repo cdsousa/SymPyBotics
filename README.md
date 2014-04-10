@@ -135,7 +135,7 @@ Install
 
 From git source:
 
-    git clone git@github.com:cdsousa/sympybotics.git
+    git clone https://github.com/cdsousa/SymPyBotics.git
     cd sympybotics
     python setup.py install
 
