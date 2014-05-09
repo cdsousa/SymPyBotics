@@ -29,11 +29,14 @@ def gen_qepcad_varmaps( var_list ):
     varmaps.forward = forwmap
     varmaps.backward = backmap
 
-    return varmaps 
+    return varmaps
 
 
 
-def sym_to_qepcad( symexpr, vardictforw={} ):
+def sym_to_qepcad( symexpr, vardictforw=None ):
+    if vardictforw is None:
+        vardictforw = {}
+
     symexpr =  str(symexpr).replace('**','^').replace('*',' ')
 
     for var in vardictforw:
@@ -53,7 +56,9 @@ def sym_to_qepcad( symexpr, vardictforw={} ):
 
 
 
-def qepcad_to_sym( qepcad_rel, vardictback={} ):
+def qepcad_to_sym( qepcad_rel, vardictback=None ):
+    if vardictforw is None:
+        vardictforw = {}
 
     elements = qepcad_rel.split()
 
@@ -80,23 +85,25 @@ def qepcad_to_sym( qepcad_rel, vardictback={} ):
 
     return ' '.join(out_elements)
 
-    
-def gen_qepcad_input( freevars, qvars, prenex, vardictforw={} ):
-  
+
+def gen_qepcad_input( freevars, qvars, prenex, vardictforw=None ):
+  if vardictforw is None:
+      vardictforw = {}
+
   vars = '(' + ','.join( [ sym_to_qepcad(var) for var in freevars ] + [ sym_to_qepcad(var) for var in qvars ] ) + ')'
-  
+
   for var in vardictforw:
     vars = vars.replace(var,vardictforw[var])
-  
+
   freevarnum = str(len(freevars))
-  
+
   prenex += '.' if prenex[-1] != '.' else ''
 
-  
+
   qepcad_input = '[]\n'+vars+'\n'+freevarnum+'\n'+prenex+'\nfinish\n'
 
   return qepcad_input
-  
+
 
 def run_qepcad( qepcad_cmd, qepcad_input ):
 
