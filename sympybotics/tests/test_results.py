@@ -114,6 +114,8 @@ def test_puma_dh_num_geo_kin_dyn():
         'python', puma560.M_code, 'M', 'M_puma560', puma560_def)
     c_func_def = sympybotics.robotcodegen.robot_code_to_func(
         'python', puma560.c_code, 'c', 'c_puma560', puma560_def)
+    C_func_def = sympybotics.robotcodegen.robot_code_to_func(
+        'python', puma560.C_code, 'C', 'C_puma560', puma560_def)
     g_func_def = sympybotics.robotcodegen.robot_code_to_func(
         'python', puma560.g_code, 'g', 'g_puma560', puma560_def)
     tau_func_def = sympybotics.robotcodegen.robot_code_to_func(
@@ -124,12 +126,14 @@ def test_puma_dh_num_geo_kin_dyn():
     l = locals()
     exec_(M_func_def, globals(), l)
     exec_(c_func_def, globals(), l)
+    exec_(C_func_def, globals(), l)
     exec_(g_func_def, globals(), l)
     exec_(tau_func_def, globals(), l)
     exec_(H_func_def, globals(), l)
     tau_puma560 = l['tau_puma560']
     g_puma560 = l['g_puma560']
     c_puma560 = l['c_puma560']
+    C_puma560 = l['C_puma560']
     M_puma560 = l['M_puma560']
     H_puma560 = l['H_puma560']
 
@@ -141,6 +145,10 @@ def test_puma_dh_num_geo_kin_dyn():
 
     c = c_puma560(dynparm_test, q_test, dq_test)
     c = numpy.matrix(c).T.astype(numpy.float64)
+
+    C = C_puma560(dynparm_test, q_test, dq_test)
+    C = numpy.matrix(C).reshape(puma560.dof, puma560.dof).astype(numpy.float64)
+    C_dq = C * numpy.matrix(dq_test).T
 
     M = M_puma560(dynparm_test, q_test)
     M = numpy.matrix(M).reshape(puma560.dof, puma560.dof).astype(numpy.float64)
@@ -157,6 +165,11 @@ def test_puma_dh_num_geo_kin_dyn():
 
     c_t2 = c_puma560(dynparm_test2, q_test, dq_test)
     c_t2 = numpy.matrix(c_t2).T.astype(numpy.float64)
+
+    C_t2 = C_puma560(dynparm_test2, q_test, dq_test)
+    C_t2 = numpy.matrix(C_t2).reshape(puma560.dof, puma560.dof
+                                      ).astype(numpy.float64)
+    C_dq_t2 = C_t2 * numpy.matrix(dq_test).T
 
     M_t2 = M_puma560(dynparm_test2, q_test)
     M_t2 = numpy.matrix(M_t2).reshape(puma560.dof, puma560.dof
@@ -237,12 +250,14 @@ def test_puma_dh_num_geo_kin_dyn():
     assert not numpy.any(numpy.round(tau_pcorke - tau, assert_precision))
     assert not numpy.any(numpy.round(g_pcorke - g, assert_precision))
     assert not numpy.any(numpy.round(c_pcorke - c, assert_precision))
+    assert not numpy.any(numpy.round(C_dq - c, assert_precision))
     assert not numpy.any(numpy.round(M_pcorke - M, assert_precision))
     assert not numpy.any(numpy.round(
         tau_pcorke - H * numpy.matrix(dynparm_test).T, assert_precision))
     assert not numpy.any(numpy.round(tau_assrt2 - tau_t2, assert_precision))
     assert not numpy.any(numpy.round(g_assrt2 - g_t2, assert_precision))
     assert not numpy.any(numpy.round(c_assrt2 - c_t2, assert_precision))
+    assert not numpy.any(numpy.round(C_dq_t2 - c_t2, assert_precision))
     assert not numpy.any(numpy.round(M_assrt2 - M_t2, assert_precision))
     assert not numpy.any(numpy.round(
         tau_assrt2 - H * numpy.matrix(dynparm_test2).T, assert_precision))
@@ -302,6 +317,8 @@ def test_puma_mdh_num_geo_kin_dyn():
         'python', puma560.M_code, 'M', 'M_puma560', puma560_def)
     c_func_def = sympybotics.robotcodegen.robot_code_to_func(
         'python', puma560.c_code, 'c', 'c_puma560', puma560_def)
+    C_func_def = sympybotics.robotcodegen.robot_code_to_func(
+        'python', puma560.C_code, 'C', 'C_puma560', puma560_def)
     g_func_def = sympybotics.robotcodegen.robot_code_to_func(
         'python', puma560.g_code, 'g', 'g_puma560', puma560_def)
     tau_func_def = sympybotics.robotcodegen.robot_code_to_func(
@@ -312,12 +329,14 @@ def test_puma_mdh_num_geo_kin_dyn():
     l = locals()
     exec_(M_func_def, globals(), l)
     exec_(c_func_def, globals(), l)
+    exec_(C_func_def, globals(), l)
     exec_(g_func_def, globals(), l)
     exec_(tau_func_def, globals(), l)
     exec_(H_func_def, globals(), l)
     tau_puma560 = l['tau_puma560']
     g_puma560 = l['g_puma560']
     c_puma560 = l['c_puma560']
+    C_puma560 = l['C_puma560']
     M_puma560 = l['M_puma560']
     H_puma560 = l['H_puma560']
 
@@ -329,6 +348,10 @@ def test_puma_mdh_num_geo_kin_dyn():
 
     c = c_puma560(dynparm_test, q_test, dq_test)
     c = numpy.matrix(c).T.astype(numpy.float64)
+
+    C = C_puma560(dynparm_test, q_test, dq_test)
+    C = numpy.matrix(C).reshape(puma560.dof, puma560.dof).astype(numpy.float64)
+    C_dq = C * numpy.matrix(dq_test).T
 
     M = M_puma560(dynparm_test, q_test)
     M = numpy.matrix(M).reshape(puma560.dof, puma560.dof).astype(numpy.float64)
@@ -345,6 +368,11 @@ def test_puma_mdh_num_geo_kin_dyn():
 
     c_t2 = c_puma560(dynparm_test2, q_test, dq_test)
     c_t2 = numpy.matrix(c_t2).T.astype(numpy.float64)
+
+    C_t2 = C_puma560(dynparm_test2, q_test, dq_test)
+    C_t2 = numpy.matrix(C_t2).reshape(puma560.dof, puma560.dof
+                                      ).astype(numpy.float64)
+    C_dq_t2 = C_t2 * numpy.matrix(dq_test).T
 
     M_t2 = M_puma560(dynparm_test2, q_test)
     M_t2 = numpy.matrix(M_t2).reshape(puma560.dof, puma560.dof
@@ -425,12 +453,14 @@ def test_puma_mdh_num_geo_kin_dyn():
     assert not numpy.any(numpy.round(tau_pcorke - tau, assert_precision))
     assert not numpy.any(numpy.round(g_pcorke - g, assert_precision))
     assert not numpy.any(numpy.round(c_pcorke - c, assert_precision))
+    assert not numpy.any(numpy.round(C_dq - c, assert_precision))
     assert not numpy.any(numpy.round(M_pcorke - M, assert_precision))
     assert not numpy.any(numpy.round(
         tau_pcorke - H * numpy.matrix(dynparm_test).T, assert_precision))
     assert not numpy.any(numpy.round(tau_assrt2 - tau_t2, assert_precision))
     assert not numpy.any(numpy.round(g_assrt2 - g_t2, assert_precision))
     assert not numpy.any(numpy.round(c_assrt2 - c_t2, assert_precision))
+    assert not numpy.any(numpy.round(C_dq_t2 - c_t2, assert_precision))
     assert not numpy.any(numpy.round(M_assrt2 - M_t2, assert_precision))
     assert not numpy.any(numpy.round(
         tau_assrt2 - H * numpy.matrix(dynparm_test2).T, assert_precision))

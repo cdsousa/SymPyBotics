@@ -39,6 +39,7 @@ generating kinematic model
 generating inverse dynamics code
 generating gravity term code
 generating coriolis term code
+generating coriolis matrix code
 generating inertia matrix code
 generating regressor matrix code
 generating friction term code

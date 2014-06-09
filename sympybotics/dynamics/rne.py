@@ -56,6 +56,45 @@ def coriolisterm(rbtdef, geom, ifunc=None):
     return rne(rbtdeftmp, geomtmp, ifunc)
 
 
+def coriolismatrix(rbtdef, geom, ifunc=None):
+    '''Generate Coriolis matrix (non-unique).'''
+
+    if not ifunc:
+        ifunc = identity
+
+    C = zeros((rbtdef.dof, rbtdef.dof))
+
+    rbtdeftmp = deepcopy(rbtdef)
+    rbtdeftmp.gravityacc = zeros((3, 1))
+    rbtdeftmp.ddq = zeros((rbtdeftmp.dof, 1))
+    rbtdeftmp.frictionmodel = None
+
+    a = {}
+    for i in range(rbtdef.dof):
+        rbtdeftmp.dq = zeros((rbtdeftmp.dof, 1))
+        rbtdeftmp.dq[i] = 1
+        geomtmp = Geometry(rbtdeftmp)
+        fw_results = rne_forward(rbtdeftmp, geomtmp, ifunc)
+        a[(i, i)] = rne_backward(rbtdeftmp, geomtmp, fw_results, ifunc=ifunc)
+    for i in range(rbtdef.dof):
+        for j in range(i+1, rbtdef.dof):
+            rbtdeftmp.dq = zeros((rbtdeftmp.dof, 1))
+            rbtdeftmp.dq[i] = rbtdeftmp.dq[j] = 1
+            geomtmp = Geometry(rbtdeftmp)
+            fw_results = rne_forward(rbtdeftmp, geomtmp)
+            a[(i, j)] = rne_backward(rbtdeftmp, geomtmp, fw_results,
+                                     ifunc=ifunc)
+            a[(i, j)] += ifunc(-a[(i, i)] - a[(j, j)])
+
+    for i in range(rbtdef.dof):
+        for j in range(i, rbtdef.dof):
+            C[:, j] += ifunc(a[(i, j)] * rbtdef.dq[i])
+
+    C = ifunc(C)
+
+    return C
+
+
 def frictionterm(rbtdef, ifunc=None):
     '''Generate friction forces expression.'''
     return frictionforce(rbtdef, ifunc)

@@ -1,7 +1,8 @@
 import sympy
 import numpy
 
-from .rne import rne, gravityterm, coriolisterm, frictionterm, inertiamatrix
+from .rne import rne, gravityterm, coriolisterm, coriolismatrix,\
+    frictionterm, inertiamatrix
 from .regressor import regressor
 from .dyn_parm_dep import find_dyn_parm_deps
 
@@ -25,6 +26,10 @@ class Dynamics(object):
 
     def gen_coriolisterm(self, ifunc=None):
         self.c = coriolisterm(
+            self.rbtdef, self.geom, ifunc)
+
+    def gen_coriolismatrix(self, ifunc=None):
+        self.C = coriolismatrix(
             self.rbtdef, self.geom, ifunc)
 
     def gen_frictionterm(self, ifunc=None):

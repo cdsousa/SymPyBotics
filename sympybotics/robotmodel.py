@@ -68,6 +68,11 @@ class RobotDynCode(object):
         self.dyn.gen_coriolisterm(c_se.collect)
         self.c_code = c_se.get(self.dyn.c)
 
+        p('generating coriolis matrix code')
+        C_se = Subexprs()
+        self.dyn.gen_coriolismatrix(C_se.collect)
+        self.C_code = C_se.get(self.dyn.C)
+
         p('generating inertia matrix code')
         M_se = Subexprs()
         self.dyn.gen_inertiamatrix(M_se.collect)
@@ -79,7 +84,8 @@ class RobotDynCode(object):
         self.H_code = H_se.get(self.dyn.H)
         self._H_se = H_se._subexp_iv
 
-        self._codes = ['invdyn_code', 'g_code', 'c_code', 'M_code', 'H_code']
+        self._codes = ['invdyn_code', 'g_code', 'c_code', 'C_code', 'M_code',
+                       'H_code']
 
         if self.rbtdef.frictionmodel is not None:
             p('generating friction term code')
