@@ -220,22 +220,29 @@ class Subexprs(object):
         tmpivs_ivs = dict()
         ordered_iv_se = collections.OrderedDict()
 
-        def _get_subexprs(symb):
-            if symb in ivar_se:
-                if symb in tmpivs_ivs:
-                    return tmpivs_ivs[symb]
-                else:
-                    subexpr = ivar_se[symb]
-                    args = list(map(_get_subexprs, subexpr.args))
-                    subexpr = type(subexpr)(*args)
-                    if symb in repeated:
-                        ivar = next(symbols)
-                        ordered_iv_se[ivar] = subexpr
-                        tmpivs_ivs[symb] = ivar
-                        return ivar
+        def _get_subexprs(subexpr):
+            if subexpr.is_Atom:
+                symb = subexpr
+                if symb in ivar_se:
+                    if symb in tmpivs_ivs:
+                        return tmpivs_ivs[symb]
                     else:
-                        return subexpr
-            return symb
+                        subexpr = ivar_se[symb]
+                        args = list(map(_get_subexprs, subexpr.args))
+                        subexpr = type(subexpr)(*args)
+                        if symb in repeated:
+                            ivar = next(symbols)
+                            ordered_iv_se[ivar] = subexpr
+                            tmpivs_ivs[symb] = ivar
+                            return ivar
+                        else:
+                            return subexpr
+                else:
+                    return symb
+            else:
+                args = list(map(_get_subexprs, subexpr.args))
+                subexpr = type(subexpr)(*args)
+                return subexpr
 
         out_exprs = []
         for expr in exprs:

@@ -82,7 +82,7 @@ def coriolismatrix(rbtdef, geom, ifunc=None):
         rbtdeftmp.dq[i] = 1
         geomtmp = Geometry(rbtdeftmp)
         fw_results = rne_forward(rbtdeftmp, geomtmp, ifunc)
-        c = rne_backward(rbtdeftmp, geomtmp, fw_results, ifunc=ifunc)
+        c = rne_backward(rbtdeftmp, geomtmp, fw_results, ifunc)
         for k in range(rbtdef.dof):
             A[k][i, i] = c[k]
 
@@ -91,8 +91,8 @@ def coriolismatrix(rbtdef, geom, ifunc=None):
             rbtdeftmp.dq = zeros((rbtdeftmp.dof, 1))
             rbtdeftmp.dq[i] = rbtdeftmp.dq[j] = 1
             geomtmp = Geometry(rbtdeftmp)
-            fw_results = rne_forward(rbtdeftmp, geomtmp)
-            c = rne_backward(rbtdeftmp, geomtmp, fw_results, ifunc=ifunc)
+            fw_results = rne_forward(rbtdeftmp, geomtmp, ifunc)
+            c = rne_backward(rbtdeftmp, geomtmp, fw_results, ifunc)
             for k in range(rbtdef.dof):
                 A[k][i, j] = ifunc(c[k] - A[k][i, i] - A[k][j, j])
 
