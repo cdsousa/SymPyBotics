@@ -56,7 +56,7 @@ def test_scara_dh_sym_geo_kin():
                             [1, 1, 0, -1]])
 
     assert (scara_geo.T[-1] - T_spong).expand() == sympy.zeros(4)
-    assert (scara_kin.J[-1] - J_spong).expand() == sympy.zeros((6, 4))
+    assert (scara_kin.J[-1] - J_spong).expand() == sympy.zeros(6, 4)
 
 
 def test_puma_dh_num_geo_kin_dyn():

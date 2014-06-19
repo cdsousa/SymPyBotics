@@ -37,8 +37,8 @@ def gravityterm(rbtdef, geom, ifunc=None):
     if not ifunc:
         ifunc = identity
     rbtdeftmp = deepcopy(rbtdef)
-    rbtdeftmp.dq = zeros((rbtdeftmp.dof, 1))
-    rbtdeftmp.ddq = zeros((rbtdeftmp.dof, 1))
+    rbtdeftmp.dq = zeros(rbtdeftmp.dof, 1)
+    rbtdeftmp.ddq = zeros(rbtdeftmp.dof, 1)
     rbtdeftmp.frictionmodel = None
     geomtmp = Geometry(rbtdeftmp)
     return rne(rbtdeftmp, geomtmp, ifunc)
@@ -49,8 +49,8 @@ def coriolisterm(rbtdef, geom, ifunc=None):
     if not ifunc:
         ifunc = identity
     rbtdeftmp = deepcopy(rbtdef)
-    rbtdeftmp.gravityacc = zeros((3, 1))
-    rbtdeftmp.ddq = zeros((rbtdeftmp.dof, 1))
+    rbtdeftmp.gravityacc = zeros(3, 1)
+    rbtdeftmp.ddq = zeros(rbtdeftmp.dof, 1)
     rbtdeftmp.frictionmodel = None
     geomtmp = Geometry(rbtdeftmp)
     return rne(rbtdeftmp, geomtmp, ifunc)
@@ -62,11 +62,11 @@ def coriolismatrix(rbtdef, geom, ifunc=None):
     if not ifunc:
         ifunc = identity
 
-    C = zeros((rbtdef.dof, rbtdef.dof))
+    C = zeros(rbtdef.dof, rbtdef.dof)
 
     rbtdeftmp = deepcopy(rbtdef)
-    rbtdeftmp.gravityacc = zeros((3, 1))
-    rbtdeftmp.ddq = zeros((rbtdeftmp.dof, 1))
+    rbtdeftmp.gravityacc = zeros(3, 1)
+    rbtdeftmp.ddq = zeros(rbtdeftmp.dof, 1)
     rbtdeftmp.frictionmodel = None
 
     # # Coriolis vector c element k is given by
@@ -75,10 +75,10 @@ def coriolismatrix(rbtdef, geom, ifunc=None):
 
     # # Find upper triangular A[k]'s
 
-    A = [zeros((rbtdef.dof, rbtdef.dof)) for k in range(rbtdef.dof)]
+    A = [zeros(rbtdef.dof, rbtdef.dof) for k in range(rbtdef.dof)]
 
     for i in range(rbtdef.dof):
-        rbtdeftmp.dq = zeros((rbtdeftmp.dof, 1))
+        rbtdeftmp.dq = zeros(rbtdeftmp.dof, 1)
         rbtdeftmp.dq[i] = 1
         geomtmp = Geometry(rbtdeftmp)
         fw_results = rne_forward(rbtdeftmp, geomtmp, ifunc)
@@ -88,7 +88,7 @@ def coriolismatrix(rbtdef, geom, ifunc=None):
 
     for i in range(rbtdef.dof):
         for j in range(i+1, rbtdef.dof):
-            rbtdeftmp.dq = zeros((rbtdeftmp.dof, 1))
+            rbtdeftmp.dq = zeros(rbtdeftmp.dof, 1)
             rbtdeftmp.dq[i] = rbtdeftmp.dq[j] = 1
             geomtmp = Geometry(rbtdeftmp)
             fw_results = rne_forward(rbtdeftmp, geomtmp, ifunc)
@@ -122,15 +122,15 @@ def inertiamatrix(rbtdef, geom, ifunc=None):
     if not ifunc:
         ifunc = identity
 
-    M = zeros((rbtdef.dof, rbtdef.dof))
+    M = zeros(rbtdef.dof, rbtdef.dof)
 
     rbtdeftmp = deepcopy(rbtdef)
-    rbtdeftmp.gravityacc = zeros((3, 1))
+    rbtdeftmp.gravityacc = zeros(3, 1)
     rbtdeftmp.frictionmodel = None
-    rbtdeftmp.dq = zeros((rbtdeftmp.dof, 1))
+    rbtdeftmp.dq = zeros(rbtdeftmp.dof, 1)
 
     for i in range(M.rows):
-        rbtdeftmp.ddq = zeros((rbtdeftmp.dof, 1))
+        rbtdeftmp.ddq = zeros(rbtdeftmp.dof, 1)
         rbtdeftmp.ddq[i] = 1
         geomtmp = Geometry(rbtdeftmp)
 

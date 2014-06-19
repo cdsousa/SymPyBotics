@@ -13,7 +13,7 @@ def frictionforce(rbtdef, ifunc=None):
     if not ifunc:
         ifunc = identity
 
-    fric = zeros((rbtdef.dof, 1))
+    fric = zeros(rbtdef.dof, 1)
 
     if rbtdef.frictionmodel is None or len(rbtdef.frictionmodel) == 0:
         pass
@@ -45,7 +45,7 @@ def driveinertiaterm(rbtdef, ifunc=None):
     if not ifunc:
         ifunc = identity
 
-    driveinertia = zeros((rbtdef.dof, 1))
+    driveinertia = zeros(rbtdef.dof, 1)
 
     if rbtdef.driveinertiamodel is None:
         pass

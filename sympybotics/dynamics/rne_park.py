@@ -41,8 +41,8 @@ def rne_park_forward(rbtdef, geom, ifunc=None):
     V = list(range(0, rbtdef.dof + 1))
     dV = list(range(0, rbtdef.dof + 1))
 
-    V[-1] = zeros((6, 1))
-    dV[-1] = - zeros((3, 1)).col_join(rbtdef.gravityacc)
+    V[-1] = zeros(6, 1)
+    dV[-1] = - zeros(3, 1).col_join(rbtdef.gravityacc)
 
     # Forward
     for i in range(rbtdef.dof):
@@ -72,9 +72,9 @@ def rne_park_backward(rbtdef, geom, fw_results, ifunc=None):
     Tdh_inv = geom.Tdh_inv + [eye(4)]
 
     F = list(range(rbtdef.dof + 1))
-    F[rbtdef.dof] = zeros((6, 1))
+    F[rbtdef.dof] = zeros(6, 1)
 
-    tau = zeros((rbtdef.dof, 1))
+    tau = zeros(rbtdef.dof, 1)
 
     fric = frictionforce(rbtdef)
     Idrive = driveinertiaterm(rbtdef)

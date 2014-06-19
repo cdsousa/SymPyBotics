@@ -15,10 +15,10 @@ def rne_khalil_forward(rbtdef, geom, ifunc=None):
     dV = list(range(0, rbtdef.dof + 1))
     U = list(range(0, rbtdef.dof + 1))
 
-    w[-1] = zeros((3, 1))
-    dw[-1] = zeros((3, 1))
+    w[-1] = zeros(3, 1)
+    dw[-1] = zeros(3, 1)
     dV[-1] = -rbtdef.gravityacc
-    U[-1] = zeros((3, 3))
+    U[-1] = zeros(3, 3)
 
     z = Matrix([0, 0, 1])
 
@@ -58,19 +58,19 @@ def rne_khalil_backward(rbtdef, geom, fw_results, ifunc=None):
     # extend Rdh so that Rdh[dof] return identity
     Rdh = geom.Rdh + [eye(3)]
     # extend pdh so that pRdh[dof] return zero
-    pdh = geom.pdh + [zeros((3, 1))]
+    pdh = geom.pdh + [zeros(3, 1)]
 
     F = list(range(rbtdef.dof))
     M = list(range(rbtdef.dof))
     f = list(range(rbtdef.dof + 1))
     m = list(range(rbtdef.dof + 1))
 
-    f[rbtdef.dof] = zeros((3, 1))
-    m[rbtdef.dof] = zeros((3, 1))
+    f[rbtdef.dof] = zeros(3, 1)
+    m[rbtdef.dof] = zeros(3, 1)
 
     z = Matrix([0, 0, 1])
 
-    tau = zeros((rbtdef.dof, 1))
+    tau = zeros(rbtdef.dof, 1)
 
     fric = frictionforce(rbtdef)
     Idrive = driveinertiaterm(rbtdef)

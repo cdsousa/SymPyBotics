@@ -41,7 +41,7 @@ class Kinematics(object):
 
             self.Jp = list(range(self.rbtdef.dof))
             for l in range(self.rbtdef.dof):
-                self.Jp[l] = sympy.zeros((3, self.rbtdef.dof))
+                self.Jp[l] = sympy.zeros(3, self.rbtdef.dof)
                 for j in range(l + 1):
                     if self.rbtdef._links_sigma[j]:
                         self.Jp[l][0:3, j] = ifunc(z_ext[j - 1])
@@ -51,10 +51,10 @@ class Kinematics(object):
 
             self.Jo = list(range(self.rbtdef.dof))
             for l in range(self.rbtdef.dof):
-                self.Jo[l] = sympy.zeros((3, self.rbtdef.dof))
+                self.Jo[l] = sympy.zeros(3, self.rbtdef.dof)
                 for j in range(l + 1):
                     if self.rbtdef._links_sigma[j]:
-                        self.Jo[l][0:3, j] = sympy.zeros((3, 1))
+                        self.Jo[l][0:3, j] = sympy.zeros(3, 1)
                     else:
                         self.Jo[l][0:3, j] = ifunc(z_ext[j - 1])
 
@@ -62,7 +62,7 @@ class Kinematics(object):
 
             self.Jp = list(range(self.rbtdef.dof))
             for l in range(self.rbtdef.dof):
-                self.Jp[l] = sympy.zeros((3, self.rbtdef.dof))
+                self.Jp[l] = sympy.zeros(3, self.rbtdef.dof)
                 for j in range(l + 1):
                     if self.rbtdef._links_sigma[j]:
                         self.Jp[l][0:3, j] = ifunc(geom.z[j])
@@ -72,10 +72,10 @@ class Kinematics(object):
 
             self.Jo = list(range(self.rbtdef.dof))
             for l in range(self.rbtdef.dof):
-                self.Jo[l] = sympy.zeros((3, self.rbtdef.dof))
+                self.Jo[l] = sympy.zeros(3, self.rbtdef.dof)
                 for j in range(l + 1):
                     if self.rbtdef._links_sigma[j]:
-                        self.Jo[l][0:3, j] = sympy.zeros((3, 1))
+                        self.Jo[l][0:3, j] = sympy.zeros(3, 1)
                     else:
                         self.Jo[l][0:3, j] = ifunc(geom.z[j])
 

@@ -16,7 +16,7 @@ def regressor(rbtdef, geom, ifunc=None):
 
     dynparms = rbtdef.dynparms()
 
-    Y = zeros((rbtdef.dof, len(dynparms)))
+    Y = zeros(rbtdef.dof, len(dynparms))
 
     for p, parm in enumerate(dynparms):
 

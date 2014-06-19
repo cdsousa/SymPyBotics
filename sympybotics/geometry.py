@@ -20,7 +20,7 @@ class Geometry(object):
         def inverse_T(T):
             return T[0:3, 0:3].transpose().row_join(
                 - T[0:3, 0:3].transpose() * T[0:3, 3]).col_join(
-                sympy.zeros((1, 3)).row_join(sympy.eye(1)))
+                sympy.zeros(1, 3).row_join(sympy.eye(1)))
 
         (alpha, a, d, theta) = sympy.symbols('alpha,a,d,theta', real=True)
 
