@@ -7,6 +7,9 @@ Uses [Sympy](http://sympy.org) and [Numpy](http://www.numpy.org/) libraries.
 
 [![Build Status](https://travis-ci.org/cdsousa/SymPyBotics.png?branch=master)](https://travis-ci.org/cdsousa/SymPyBotics)
 
+[![DOI](https://zenodo.org/badge/920/cdsousa/SymPyBotics.png)](http://dx.doi.org/10.5281/zenodo.11365)
+
+
 Example
 -------
 
