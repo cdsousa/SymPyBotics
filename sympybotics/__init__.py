@@ -1,6 +1,6 @@
 """Symbolic manipulation of robot geometric, kinematic and dynamic models."""
 
-__version__ = '0.3-git'
+__version__ = '1.0'
 
 from .robotdef import RobotDef, q
 from .geometry import Geometry
