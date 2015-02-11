@@ -24,6 +24,7 @@ Definition of a 2 DOF example robot:
 ...                               dh_convention='standard' # either 'standard' or 'modified'
 ...                              )
 >>> rbtdef.frictionmodel = {'Coulomb', 'viscous'} # options are None or a combination of 'Coulomb', 'viscous' and 'offset'
+>>> rbtdef.gravityacc = sympy.Matrix([0.0, 0.0, -9.81]) # optional, this is the default value
 
 ```
 
