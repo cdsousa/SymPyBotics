@@ -1,12 +1,14 @@
 
 import sys
 import numpy
+import math
 
 from .geometry import Geometry
 from .kinematics import Kinematics
 from .dynamics import Dynamics
 from .symcode import Subexprs, code_to_func
 from ._compatibility_ import exec_
+
 
 def _fprint(x):
     print(x)
@@ -40,7 +42,7 @@ class RobotDynCode(object):
         if verbose:
             p = _fprint
         else:
-            p = lambda x: None
+            def p(x): return None
 
         self.rbtdef = rbtdef
         self.dof = rbtdef.dof

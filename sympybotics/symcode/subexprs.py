@@ -139,7 +139,7 @@ class Subexprs(object):
             # Exclude atoms, since there is no point in renaming them.
             return expr
 
-        if sympy.iterables.iterable(expr):
+        if sympy.utilities.iterables.iterable(expr):
             return expr
 
         subexpr = type(expr)(*map(self._parse, expr.args))
